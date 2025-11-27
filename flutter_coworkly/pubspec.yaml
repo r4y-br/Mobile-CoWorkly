@@ -1,0 +1,50 @@
+name: coworkly
+description: 'A modern coworking space booking application built with Flutter.'
+
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State Management
+  provider: ^6.0.0
+
+  # UI & Themes
+  google_fonts: ^6.1.0
+  intl: ^0.19.0
+
+  # Navigation
+  go_router: ^13.0.0
+
+  # HTTP & API
+  http: ^1.1.0
+
+  # Local Storage
+  shared_preferences: ^2.2.0
+
+  # Notifications
+  flutter_local_notifications: ^16.1.0
+
+  # Icons
+  material_design_icons_flutter: ^7.0.7296
+
+  # Animations
+  animations: ^2.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
