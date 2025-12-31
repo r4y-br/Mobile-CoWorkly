@@ -2,11 +2,15 @@ import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import authRoutes from './src/routes/auth.js';
+import roomsRoutes from './src/routes/rooms.js';
+import seatsRoutes from './src/routes/seats.js';
+import reservationsRoutes from './src/routes/reservations.js';
+import notificationsRoutes from './src/routes/notifications.js';
 
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 4000;
 
 // middlewares
 app.use(cors());
@@ -14,7 +18,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // routes
-app.use('/api/auth', authRoutes);
+app.use('/auth', authRoutes);
+app.use('/rooms', roomsRoutes);
+app.use('/seats', seatsRoutes);
+app.use('/reservations', reservationsRoutes);
+app.use('/notifications', notificationsRoutes);
 
 // just a health check endpoint
 app.get('/health', (req, res) => {

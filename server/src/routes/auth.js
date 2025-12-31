@@ -12,8 +12,8 @@ import { authenticate } from "../middlewares/auth.js";
 const router = express.Router();
 
 // these are the public routes
-router.post('/signup', signUp);
-router.post('/signin', signIn);
+router.post('/register', signUp);  
+router.post('/login', signIn);
 router.post('/refresh', refreshToken);
 
 // these are protected routes

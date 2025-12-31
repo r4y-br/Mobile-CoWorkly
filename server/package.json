@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "dev": "nodemon index.js"
   },
   "keywords": [],
@@ -23,8 +25,11 @@
     "pg": "^8.16.3"
   },
   "devDependencies": {
+    "@babel/preset-env": "^7.28.5",
     "dotenv-cli": "^11.0.0",
     "nodemon": "^3.1.11",
-    "prisma": "^7.2.0"
+    "prisma": "^7.2.0",
+    "supertest": "^7.1.4",
+    "vitest": "^4.0.16"
   }
 }
