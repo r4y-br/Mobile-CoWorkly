@@ -110,7 +110,9 @@ class ProfileScreen extends StatelessWidget {
                         child: Padding(
                           padding: const EdgeInsets.all(4.0),
                           child: CircleAvatar(
-                            backgroundColor: const Color(0xFF10B981),
+                            backgroundColor: appProvider.isAdmin
+                                ? const Color(0xFFEF4444)
+                                : const Color(0xFF10B981),
                             child: Text(
                               user.avatar,
                               style: const TextStyle(
@@ -122,23 +124,28 @@ class ProfileScreen extends StatelessWidget {
                           ),
                         ),
                       ),
-                      Positioned(
-                        bottom: 4,
-                        right: 4,
-                        child: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF10B981),
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 4),
-                          ),
-                          child: const Icon(
-                            Icons.workspace_premium,
-                            size: 16,
-                            color: Colors.white,
+                      if (user.isPremium || appProvider.isAdmin)
+                        Positioned(
+                          bottom: 4,
+                          right: 4,
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: appProvider.isAdmin
+                                  ? const Color(0xFFEF4444)
+                                  : const Color(0xFF10B981),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 4),
+                            ),
+                            child: Icon(
+                              appProvider.isAdmin
+                                  ? Icons.admin_panel_settings
+                                  : Icons.workspace_premium,
+                              size: 16,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
-                      ),
                     ],
                   ),
                 ),
@@ -169,14 +176,22 @@ class ProfileScreen extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF10B981), Color(0xFF6366F1)],
+                  gradient: LinearGradient(
+                    colors: appProvider.isAdmin
+                        ? [const Color(0xFFEF4444), const Color(0xFFDC2626)]
+                        : user.isPremium
+                            ? [const Color(0xFF10B981), const Color(0xFF6366F1)]
+                            : [Colors.grey.shade400, Colors.grey.shade600],
                   ),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Text(
-                  'Membre Premium',
-                  style: TextStyle(
+                child: Text(
+                  appProvider.isAdmin
+                      ? 'Administrateur'
+                      : user.isPremium
+                          ? 'Membre Premium'
+                          : 'Membre Standard',
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
@@ -284,14 +299,16 @@ class ProfileScreen extends StatelessWidget {
                         color: Colors.teal,
                         onTap: () {},
                       ),
-                      const Divider(height: 1),
-                      _buildMenuItem(
-                        context,
-                        icon: Icons.admin_panel_settings,
-                        label: 'Accès administration',
-                        color: Colors.red,
-                        onTap: () => appProvider.goToAdminPanel(),
-                      ),
+                      if (appProvider.isAdmin) ...[
+                        const Divider(height: 1),
+                        _buildMenuItem(
+                          context,
+                          icon: Icons.admin_panel_settings,
+                          label: 'Accès administration',
+                          color: Colors.red,
+                          onTap: () => appProvider.goToAdminPanel(),
+                        ),
+                      ],
                     ],
                   ),
                 ),

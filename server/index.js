@@ -6,7 +6,6 @@ import roomsRoutes from './src/routes/rooms.js';
 import seatsRoutes from './src/routes/seats.js';
 import reservationsRoutes from './src/routes/reservations.js';
 import notificationsRoutes from './src/routes/notifications.js';
-
 dotenv.config();
 
 const app = express();

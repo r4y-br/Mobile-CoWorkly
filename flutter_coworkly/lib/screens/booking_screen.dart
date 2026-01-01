@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/app_provider.dart';
+import '../services/reservations_api.dart';
 
 class BookingScreen extends StatefulWidget {
   const BookingScreen({Key? key}) : super(key: key);
@@ -14,6 +17,9 @@ class _BookingScreenState extends State<BookingScreen> {
   String selectedTime = '09:00';
   int duration = 1;
   String paymentMethod = 'card';
+  bool _isSubmitting = false;
+  String? _submitError;
+  final ReservationsApi _bookingApi = ReservationsApi();
 
   final List<Map<String, dynamic>> bookingTypes = [
     {'id': 'hourly', 'label': 'À l\'heure', 'price': 5, 'unit': 'heure'},
@@ -33,6 +39,12 @@ class _BookingScreenState extends State<BookingScreen> {
     '17:00',
     '18:00',
   ];
+
+  @override
+  void dispose() {
+    _bookingApi.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -64,9 +76,13 @@ class _BookingScreenState extends State<BookingScreen> {
                         if (step > 1) {
                           setState(() {
                             step--;
+                            _submitError = null;
                           });
                         } else {
-                          Navigator.pop(context);
+                          Provider.of<AppProvider>(
+                            context,
+                            listen: false,
+                          ).goToRoom();
                         }
                       },
                     ),
@@ -127,6 +143,17 @@ class _BookingScreenState extends State<BookingScreen> {
                   ] else if (step == 3) ...[
                     _buildStep3(totalPrice, selectedBookingConfig),
                   ],
+                  if (_submitError != null) ...[
+                    const SizedBox(height: 16),
+                    Text(
+                      _submitError!,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.red[600],
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 100), // Bottom padding for button
                 ],
               ),
@@ -150,22 +177,18 @@ class _BookingScreenState extends State<BookingScreen> {
           child: SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () {
-                if (step < 3) {
-                  setState(() {
-                    step++;
-                  });
-                } else {
-                  // Confirm booking
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Réservation confirmée !'),
-                      backgroundColor: Color(0xFF10B981),
-                    ),
-                  );
-                }
-              },
+              onPressed: _isSubmitting
+                  ? null
+                  : () {
+                      if (step < 3) {
+                        setState(() {
+                          step++;
+                          _submitError = null;
+                        });
+                      } else {
+                        _submitBooking(totalPrice, selectedBookingConfig);
+                      }
+                    },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF6366F1),
                 foregroundColor: Colors.white,
@@ -174,12 +197,146 @@ class _BookingScreenState extends State<BookingScreen> {
                 ),
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
-              child: Text(step == 3 ? 'Confirmer et payer' : 'Continuer'),
+              child: _isSubmitting
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : Text(step == 3 ? 'Confirmer et payer' : 'Continuer'),
             ),
           ),
         ),
       ),
     );
+  }
+
+  Future<void> _submitBooking(
+    int totalPrice,
+    Map<String, dynamic> selectedConfig,
+  ) async {
+    final appProvider = Provider.of<AppProvider>(context, listen: false);
+    final user = appProvider.currentUser;
+    final roomId = appProvider.selectedRoomId;
+    final seatId = appProvider.selectedSeatId;
+
+    if (user == null) {
+      setState(() {
+        _submitError = 'Connectez-vous avant de reserver.';
+      });
+      return;
+    }
+
+    if (roomId == null || roomId.isEmpty) {
+      setState(() {
+        _submitError = 'Selectionnez une salle avant de reserver.';
+      });
+      return;
+    }
+
+    final token = appProvider.authToken;
+    if (token == null || token.isEmpty) {
+      setState(() {
+        _submitError = 'Session invalide. Reconnectez-vous.';
+      });
+      return;
+    }
+
+    if (seatId == null || seatId.isEmpty) {
+      setState(() {
+        _submitError = 'Selectionnez une chaise avant de reserver.';
+      });
+      return;
+    }
+
+    setState(() {
+      _isSubmitting = true;
+      _submitError = null;
+    });
+
+    try {
+      // Map booking type to API reservation type
+      final apiType = bookingType == 'daily' || bookingType == 'weekly'
+          ? 'DAILY'
+          : 'HOURLY';
+
+      await _bookingApi.createReservation(
+        token: token,
+        seatId: seatId,
+        date: _formatDate(selectedDate),
+        startTime: selectedTime,
+        endTime: _calculateEndTime(selectedTime, bookingType, duration),
+        type: apiType,
+        price: totalPrice.toDouble(),
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _isSubmitting = false;
+      });
+
+      appProvider.recordBooking(
+        price: totalPrice.toDouble(),
+        hours: _estimateHours(),
+      );
+      appProvider.confirmBooking();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Réservation confirmée !'),
+          backgroundColor: Color(0xFF10B981),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _isSubmitting = false;
+        _submitError = error.toString().replaceFirst('Exception: ', '');
+      });
+    }
+  }
+
+  int _estimateHours() {
+    switch (bookingType) {
+      case 'hourly':
+        return duration;
+      case 'daily':
+        return duration * 8;
+      case 'weekly':
+        return duration * 40;
+      default:
+        return duration;
+    }
+  }
+
+  String _formatDate(DateTime date) {
+    final year = date.year.toString().padLeft(4, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
+    return '$year-$month-$day';
+  }
+
+  String _calculateEndTime(String startTime, String type, int amount) {
+    final parts = startTime.split(':');
+    final startHour = int.tryParse(parts.first) ?? 0;
+    final startMinute = parts.length > 1 ? int.tryParse(parts[1]) ?? 0 : 0;
+    int hoursToAdd = amount;
+    if (type == 'daily') {
+      hoursToAdd = amount * 8;
+    } else if (type == 'weekly') {
+      hoursToAdd = amount * 40;
+    }
+    final totalMinutes = startHour * 60 + startMinute + hoursToAdd * 60;
+    final endHour = (totalMinutes ~/ 60) % 24;
+    final endMinute = totalMinutes % 60;
+    return '${endHour.toString().padLeft(2, '0')}:${endMinute.toString().padLeft(2, '0')}';
   }
 
   Widget _buildStep1(Map<String, dynamic> selectedConfig) {
