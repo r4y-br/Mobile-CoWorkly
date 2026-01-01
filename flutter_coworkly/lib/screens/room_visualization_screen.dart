@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/app_provider.dart';
+import '../services/seats_api.dart';
 
 class RoomVisualizationScreen extends StatefulWidget {
   const RoomVisualizationScreen({Key? key}) : super(key: key);
@@ -10,31 +13,126 @@ class RoomVisualizationScreen extends StatefulWidget {
 
 class _RoomVisualizationScreenState extends State<RoomVisualizationScreen> {
   String? selectedSeatId;
+  int? selectedSeatNumber;
   final TransformationController _transformationController =
       TransformationController();
 
-  final List<Map<String, dynamic>> seats = [
+  final SeatsApi _seatsApi = SeatsApi();
+  bool _isLoading = true;
+  String? _loadError;
+  List<Map<String, dynamic>> _seats = [];
+
+  final List<Map<String, dynamic>> _seatLayout = [
     // Rangée 1
-    {'id': 's1', 'number': 1, 'status': 'available', 'x': 0.2, 'y': 0.2},
-    {'id': 's2', 'number': 2, 'status': 'occupied', 'x': 0.4, 'y': 0.2},
-    {'id': 's3', 'number': 3, 'status': 'available', 'x': 0.6, 'y': 0.2},
-    {'id': 's4', 'number': 4, 'status': 'reserved', 'x': 0.8, 'y': 0.2},
+    {'number': 1, 'x': 0.2, 'y': 0.2},
+    {'number': 2, 'x': 0.4, 'y': 0.2},
+    {'number': 3, 'x': 0.6, 'y': 0.2},
+    {'number': 4, 'x': 0.8, 'y': 0.2},
     // Rangée 2
-    {'id': 's5', 'number': 5, 'status': 'available', 'x': 0.2, 'y': 0.4},
-    {'id': 's6', 'number': 6, 'status': 'available', 'x': 0.4, 'y': 0.4},
-    {'id': 's7', 'number': 7, 'status': 'occupied', 'x': 0.6, 'y': 0.4},
-    {'id': 's8', 'number': 8, 'status': 'available', 'x': 0.8, 'y': 0.4},
+    {'number': 5, 'x': 0.2, 'y': 0.4},
+    {'number': 6, 'x': 0.4, 'y': 0.4},
+    {'number': 7, 'x': 0.6, 'y': 0.4},
+    {'number': 8, 'x': 0.8, 'y': 0.4},
     // Rangée 3
-    {'id': 's9', 'number': 9, 'status': 'reserved', 'x': 0.2, 'y': 0.6},
-    {'id': 's10', 'number': 10, 'status': 'available', 'x': 0.4, 'y': 0.6},
-    {'id': 's11', 'number': 11, 'status': 'available', 'x': 0.6, 'y': 0.6},
-    {'id': 's12', 'number': 12, 'status': 'occupied', 'x': 0.8, 'y': 0.6},
+    {'number': 9, 'x': 0.2, 'y': 0.6},
+    {'number': 10, 'x': 0.4, 'y': 0.6},
+    {'number': 11, 'x': 0.6, 'y': 0.6},
+    {'number': 12, 'x': 0.8, 'y': 0.6},
     // Rangée 4
-    {'id': 's13', 'number': 13, 'status': 'available', 'x': 0.2, 'y': 0.8},
-    {'id': 's14', 'number': 14, 'status': 'available', 'x': 0.4, 'y': 0.8},
-    {'id': 's15', 'number': 15, 'status': 'available', 'x': 0.6, 'y': 0.8},
-    {'id': 's16', 'number': 16, 'status': 'reserved', 'x': 0.8, 'y': 0.8},
+    {'number': 13, 'x': 0.2, 'y': 0.8},
+    {'number': 14, 'x': 0.4, 'y': 0.8},
+    {'number': 15, 'x': 0.6, 'y': 0.8},
+    {'number': 16, 'x': 0.8, 'y': 0.8},
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSeats();
+  }
+
+  @override
+  void dispose() {
+    _seatsApi.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadSeats() async {
+    setState(() {
+      _isLoading = true;
+      _loadError = null;
+      selectedSeatId = null;
+      selectedSeatNumber = null;
+    });
+
+    final roomId =
+        Provider.of<AppProvider>(context, listen: false).selectedRoomId;
+    if (roomId == null || roomId.isEmpty) {
+      setState(() {
+        _loadError = 'Aucune salle selectionnee.';
+        _isLoading = false;
+      });
+      return;
+    }
+
+    try {
+      final seats = await _seatsApi.fetchSeats(roomId: roomId);
+      final byNumber = <int, Map<String, dynamic>>{};
+      for (final seat in seats) {
+        final number = seat['number'];
+        if (number is int) {
+          byNumber[number] = seat;
+        }
+      }
+
+      final mapped = _seatLayout.map((layout) {
+        final number = layout['number'] as int;
+        final apiSeat = byNumber[number];
+        final status = apiSeat != null
+            ? _mapStatus(apiSeat['status'] as String?)
+            : 'available';
+        // Handle both int and String IDs from API
+        final rawId = apiSeat?['id'];
+        final id = rawId is int ? rawId.toString() : rawId?.toString();
+        return {
+          'id': id,
+          'number': number,
+          'status': status,
+          'x': layout['x'],
+          'y': layout['y'],
+        };
+      }).toList();
+
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _seats = mapped;
+        _isLoading = false;
+      });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _loadError = error.toString().replaceFirst('Exception: ', '');
+        _isLoading = false;
+      });
+    }
+  }
+
+  String _mapStatus(String? status) {
+    switch (status) {
+      case 'AVAILABLE':
+        return 'available';
+      case 'OCCUPIED':
+        return 'occupied';
+      case 'RESERVED':
+        return 'reserved';
+      default:
+        return 'available';
+    }
+  }
 
   Color getStatusColor(String status) {
     switch (status) {
@@ -49,12 +147,48 @@ class _RoomVisualizationScreenState extends State<RoomVisualizationScreen> {
     }
   }
 
+  Widget _buildErrorState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.cloud_off, size: 48, color: Colors.grey[500]),
+            const SizedBox(height: 16),
+            Text(
+              _loadError ?? 'Erreur lors du chargement des chaises.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey[700]),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _loadSeats,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF6366F1),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text('Réessayer'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final availableCount =
-        seats.where((s) => s['status'] == 'available').length;
-    final occupiedCount = seats.where((s) => s['status'] == 'occupied').length;
-    final reservedCount = seats.where((s) => s['status'] == 'reserved').length;
+        _seats.where((s) => s['status'] == 'available').length;
+    final occupiedCount = _seats.where((s) => s['status'] == 'occupied').length;
+    final reservedCount = _seats.where((s) => s['status'] == 'reserved').length;
+    final spaceName = Provider.of<AppProvider>(context).selectedRoomName;
+    final subtitle = spaceName.isNotEmpty
+        ? 'CoWorkly - $spaceName'
+        : 'CoWorkly - Salle principale';
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
@@ -109,7 +243,10 @@ class _RoomVisualizationScreenState extends State<RoomVisualizationScreen> {
                           IconButton(
                             icon: const Icon(Icons.arrow_back,
                                 color: Colors.white),
-                            onPressed: () => Navigator.pop(context),
+                            onPressed: () => Provider.of<AppProvider>(
+                              context,
+                              listen: false,
+                            ).goToSpaceSelection(),
                           ),
                           const SizedBox(width: 8),
                           Column(
@@ -125,7 +262,7 @@ class _RoomVisualizationScreenState extends State<RoomVisualizationScreen> {
                                 ),
                               ),
                               Text(
-                                'CoWorkly - Salle principale',
+                                subtitle,
                                 style: TextStyle(
                                   color: Colors.white.withOpacity(0.8),
                                   fontSize: 12,
@@ -156,181 +293,206 @@ class _RoomVisualizationScreenState extends State<RoomVisualizationScreen> {
           ),
           // Room Plan
           Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(24),
-                  child: Stack(
-                    children: [
-                      InteractiveViewer(
-                        transformationController: _transformationController,
-                        minScale: 0.5,
-                        maxScale: 3.0,
-                        child: LayoutBuilder(
-                          builder: (context, constraints) {
-                            return Stack(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _loadError != null
+                    ? _buildErrorState()
+                    : Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(24),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(24),
+                            child: Stack(
                               children: [
-                                // Tables (zones)
-                                Positioned(
-                                  top: constraints.maxHeight * 0.15,
-                                  left: constraints.maxWidth * 0.15,
-                                  width: constraints.maxWidth * 0.3,
-                                  height: constraints.maxHeight * 0.2,
-                                  child: _buildTableZone(),
-                                ),
-                                Positioned(
-                                  top: constraints.maxHeight * 0.15,
-                                  right: constraints.maxWidth * 0.15,
-                                  width: constraints.maxWidth * 0.3,
-                                  height: constraints.maxHeight * 0.2,
-                                  child: _buildTableZone(),
-                                ),
-                                Positioned(
-                                  bottom: constraints.maxHeight * 0.15,
-                                  left: constraints.maxWidth * 0.15,
-                                  width: constraints.maxWidth * 0.3,
-                                  height: constraints.maxHeight * 0.2,
-                                  child: _buildTableZone(),
-                                ),
-                                Positioned(
-                                  bottom: constraints.maxHeight * 0.15,
-                                  right: constraints.maxWidth * 0.15,
-                                  width: constraints.maxWidth * 0.3,
-                                  height: constraints.maxHeight * 0.2,
-                                  child: _buildTableZone(),
-                                ),
-                                // Seats
-                                ...seats.map((seat) {
-                                  final isSelected =
-                                      selectedSeatId == seat['id'];
-                                  return Positioned(
-                                    left: constraints.maxWidth *
-                                            (seat['x'] as double) -
-                                        20,
-                                    top: constraints.maxHeight *
-                                            (seat['y'] as double) -
-                                        20,
-                                    child: GestureDetector(
-                                      onTap: () {
-                                        if (seat['status'] == 'available') {
-                                          setState(() {
-                                            selectedSeatId =
-                                                seat['id'] as String;
-                                          });
-                                        }
-                                      },
-                                      child: Container(
-                                        width: 40,
-                                        height: 40,
-                                        decoration: BoxDecoration(
-                                          color: getStatusColor(
-                                              seat['status'] as String),
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                          border: isSelected
-                                              ? Border.all(
-                                                  color:
-                                                      const Color(0xFF6366F1),
-                                                  width: 3)
-                                              : null,
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color:
-                                                  Colors.black.withOpacity(0.1),
-                                              blurRadius: 4,
-                                              offset: const Offset(0, 2),
-                                            ),
-                                          ],
-                                        ),
-                                        child: Center(
-                                          child: Text(
-                                            '${seat['number']}',
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.bold,
+                                InteractiveViewer(
+                                  transformationController:
+                                      _transformationController,
+                                  minScale: 0.5,
+                                  maxScale: 3.0,
+                                  child: LayoutBuilder(
+                                    builder: (context, constraints) {
+                                      return Stack(
+                                        children: [
+                                          // Tables (zones)
+                                          Positioned(
+                                            top: constraints.maxHeight * 0.15,
+                                            left: constraints.maxWidth * 0.15,
+                                            width: constraints.maxWidth * 0.3,
+                                            height: constraints.maxHeight * 0.2,
+                                            child: _buildTableZone(),
+                                          ),
+                                          Positioned(
+                                            top: constraints.maxHeight * 0.15,
+                                            right: constraints.maxWidth * 0.15,
+                                            width: constraints.maxWidth * 0.3,
+                                            height: constraints.maxHeight * 0.2,
+                                            child: _buildTableZone(),
+                                          ),
+                                          Positioned(
+                                            bottom:
+                                                constraints.maxHeight * 0.15,
+                                            left: constraints.maxWidth * 0.15,
+                                            width: constraints.maxWidth * 0.3,
+                                            height: constraints.maxHeight * 0.2,
+                                            child: _buildTableZone(),
+                                          ),
+                                          Positioned(
+                                            bottom:
+                                                constraints.maxHeight * 0.15,
+                                            right: constraints.maxWidth * 0.15,
+                                            width: constraints.maxWidth * 0.3,
+                                            height: constraints.maxHeight * 0.2,
+                                            child: _buildTableZone(),
+                                          ),
+                                          // Seats
+                                          ..._seats.map((seat) {
+                                            final isSelected =
+                                                selectedSeatId == seat['id'];
+                                            final seatId =
+                                                seat['id'] as String?;
+                                            final isAvailable =
+                                                seat['status'] == 'available';
+                                            return Positioned(
+                                              left: constraints.maxWidth *
+                                                      (seat['x'] as double) -
+                                                  20,
+                                              top: constraints.maxHeight *
+                                                      (seat['y'] as double) -
+                                                  20,
+                                              child: GestureDetector(
+                                                onTap: () {
+                                                  if (isAvailable &&
+                                                      seatId != null) {
+                                                    setState(() {
+                                                      selectedSeatId = seatId;
+                                                      selectedSeatNumber =
+                                                          seat['number'] as int;
+                                                    });
+                                                  }
+                                                },
+                                                child: Container(
+                                                  width: 40,
+                                                  height: 40,
+                                                  decoration: BoxDecoration(
+                                                    color: getStatusColor(
+                                                        seat['status']
+                                                            as String),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            12),
+                                                    border: isSelected
+                                                        ? Border.all(
+                                                            color: const Color(
+                                                                0xFF6366F1),
+                                                            width: 3)
+                                                        : null,
+                                                    boxShadow: [
+                                                      BoxShadow(
+                                                        color: Colors.black
+                                                            .withOpacity(0.1),
+                                                        blurRadius: 4,
+                                                        offset:
+                                                            const Offset(0, 2),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  child: Center(
+                                                    child: Text(
+                                                      '${seat['number']}',
+                                                      style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            );
+                                          }).toList(),
+                                          // Entrance
+                                          Positioned(
+                                            bottom: 0,
+                                            left: constraints.maxWidth / 2 - 40,
+                                            child: Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 16,
+                                                      vertical: 8),
+                                              decoration: const BoxDecoration(
+                                                color: Color(0xFF6366F1),
+                                                borderRadius:
+                                                    BorderRadius.vertical(
+                                                        top: Radius.circular(
+                                                            16)),
+                                              ),
+                                              child: const Text(
+                                                'Entrée',
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                }).toList(),
-                                // Entrance
+                                        ],
+                                      );
+                                    },
+                                  ),
+                                ),
+                                // Zoom Controls
                                 Positioned(
-                                  bottom: 0,
-                                  left: constraints.maxWidth / 2 - 40,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 16, vertical: 8),
-                                    decoration: const BoxDecoration(
-                                      color: Color(0xFF6366F1),
-                                      borderRadius: BorderRadius.vertical(
-                                          top: Radius.circular(16)),
-                                    ),
-                                    child: const Text(
-                                      'Entrée',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
+                                  top: 16,
+                                  right: 16,
+                                  child: Column(
+                                    children: [
+                                      _buildZoomButton(Icons.add, () {
+                                        _transformationController.value
+                                            .scale(1.2);
+                                      }),
+                                      const SizedBox(height: 8),
+                                      _buildZoomButton(Icons.remove, () {
+                                        _transformationController.value
+                                            .scale(0.8);
+                                      }),
+                                    ],
+                                  ),
+                                ),
+                                // Legend
+                                Positioned(
+                                  bottom: 16,
+                                  left: 16,
+                                  right: 16,
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      _buildLegendItem(
+                                          Colors.green, 'Disponible'),
+                                      const SizedBox(width: 16),
+                                      _buildLegendItem(Colors.red, 'Occupé'),
+                                      const SizedBox(width: 16),
+                                      _buildLegendItem(
+                                          Colors.orange, 'Réservé'),
+                                    ],
                                   ),
                                 ),
                               ],
-                            );
-                          },
+                            ),
+                          ),
                         ),
                       ),
-                      // Zoom Controls
-                      Positioned(
-                        top: 16,
-                        right: 16,
-                        child: Column(
-                          children: [
-                            _buildZoomButton(Icons.add, () {
-                              _transformationController.value.scale(1.2);
-                            }),
-                            const SizedBox(height: 8),
-                            _buildZoomButton(Icons.remove, () {
-                              _transformationController.value.scale(0.8);
-                            }),
-                          ],
-                        ),
-                      ),
-                      // Legend
-                      Positioned(
-                        bottom: 16,
-                        left: 16,
-                        right: 16,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            _buildLegendItem(Colors.green, 'Disponible'),
-                            const SizedBox(width: 16),
-                            _buildLegendItem(Colors.red, 'Occupé'),
-                            const SizedBox(width: 16),
-                            _buildLegendItem(Colors.orange, 'Réservé'),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
           ),
           // Selection Info
           if (selectedSeatId != null)
@@ -357,7 +519,7 @@ class _RoomVisualizationScreenState extends State<RoomVisualizationScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Siège ${seats.firstWhere((s) => s['id'] == selectedSeatId)['number']}',
+                              'Siège ${selectedSeatNumber ?? ''}',
                               style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -395,8 +557,15 @@ class _RoomVisualizationScreenState extends State<RoomVisualizationScreen> {
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () {
-                          // Handle booking
-                          Navigator.pop(context, selectedSeatId);
+                          final seatId = selectedSeatId;
+                          final seatNumber = selectedSeatNumber;
+                          if (seatId == null || seatNumber == null) {
+                            return;
+                          }
+                          Provider.of<AppProvider>(
+                            context,
+                            listen: false,
+                          ).selectSeat(seatId, seatNumber);
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF6366F1),

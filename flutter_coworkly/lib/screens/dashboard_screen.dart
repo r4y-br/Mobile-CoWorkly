@@ -1,17 +1,66 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'dart:math' as math;
+import '../providers/app_provider.dart';
+import '../services/reservations_api.dart';
+import '../models/user.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({Key? key}) : super(key: key);
 
   @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  List<Map<String, dynamic>> _reservations = [];
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadReservations();
+  }
+
+  Future<void> _loadReservations() async {
+    final provider = context.read<AppProvider>();
+    final token = provider.authToken;
+
+    if (token == null) {
+      setState(() {
+        _isLoading = false;
+        _error = 'Non authentifié';
+      });
+      return;
+    }
+
+    try {
+      final api = ReservationsApi();
+      final reservations = await api.fetchReservations(token: token);
+      setState(() {
+        _reservations = reservations;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _error = e.toString();
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final provider = context.watch<AppProvider>();
+    final user = provider.currentUser;
+
     return Scaffold(
       backgroundColor: Colors.grey[50],
       body: SingleChildScrollView(
         child: Column(
           children: [
-            _buildHeader(context),
+            _buildHeader(context, user),
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
@@ -35,7 +84,16 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(BuildContext context, User? user) {
+    final userName = user?.name ?? 'Utilisateur';
+    final isPremium = user?.isPremium ?? false;
+    final initials = userName
+        .split(' ')
+        .map((e) => e.isNotEmpty ? e[0] : '')
+        .take(2)
+        .join()
+        .toUpperCase();
+
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 60, 24, 32),
       decoration: const BoxDecoration(
@@ -69,9 +127,9 @@ class DashboardScreen extends StatelessWidget {
                 child: CircleAvatar(
                   radius: 28,
                   backgroundColor: const Color(0xFF10B981),
-                  child: const Text(
-                    'JD',
-                    style: TextStyle(
+                  child: Text(
+                    initials,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                     ),
@@ -82,9 +140,9 @@ class DashboardScreen extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Jean Dupont',
-                    style: TextStyle(
+                  Text(
+                    userName,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -98,13 +156,16 @@ class DashboardScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
-                      children: const [
-                        Icon(Icons.workspace_premium,
-                            color: Colors.white, size: 14),
-                        SizedBox(width: 4),
+                      children: [
+                        Icon(
+                          isPremium ? Icons.workspace_premium : Icons.person,
+                          color: Colors.white,
+                          size: 14,
+                        ),
+                        const SizedBox(width: 4),
                         Text(
-                          'Membre Pro',
-                          style: TextStyle(
+                          isPremium ? 'Membre Pro' : 'Membre',
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
@@ -120,11 +181,12 @@ class DashboardScreen extends StatelessWidget {
           const SizedBox(height: 24),
           Row(
             children: [
-              _buildQuickStat('97', 'Heures totales'),
+              _buildQuickStat('${user?.hours ?? 0}', 'Heures totales'),
               const SizedBox(width: 12),
-              _buildQuickStat('458€', 'Dépensé'),
+              _buildQuickStat(
+                  '${user?.spending.toStringAsFixed(0) ?? 0}€', 'Dépensé'),
               const SizedBox(width: 12),
-              _buildQuickStat('12', 'Jours consécutifs'),
+              _buildQuickStat('${user?.bookings ?? 0}', 'Réservations'),
             ],
           ),
         ],
@@ -472,29 +534,49 @@ class DashboardScreen extends StatelessWidget {
   }
 
   Widget _buildRecentBookings(BuildContext context) {
-    final bookings = [
-      {
-        'space': 'Creative Hub Paris',
-        'date': '20 Nov 2025',
-        'time': '09:00 - 17:00',
-        'status': 'confirmed',
-        'price': '25',
-      },
-      {
-        'space': 'Tech Space Marais',
-        'date': '18 Nov 2025',
-        'time': '14:00 - 18:00',
-        'status': 'completed',
-        'price': '20',
-      },
-      {
-        'space': 'Work & Lounge',
-        'date': '15 Nov 2025',
-        'time': '10:00 - 16:00',
-        'status': 'completed',
-        'price': '30',
-      },
-    ];
+    // Use real reservations from API
+    if (_isLoading) {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (_error != null) {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Center(
+          child: Text(
+            'Erreur: $_error',
+            style: TextStyle(color: Colors.red[600]),
+          ),
+        ),
+      );
+    }
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -515,25 +597,73 @@ class DashboardScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
-                'Historique',
+                'Mes réservations',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               TextButton(
-                onPressed: () {},
+                onPressed: _loadReservations,
                 child: Row(
                   children: const [
-                    Text('Voir tout'),
-                    Icon(Icons.chevron_right, size: 16),
+                    Icon(Icons.refresh, size: 16),
+                    SizedBox(width: 4),
+                    Text('Actualiser'),
                   ],
                 ),
               ),
             ],
           ),
           const SizedBox(height: 8),
-          ...bookings.map((booking) => Padding(
+          if (_reservations.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              child: Column(
+                children: [
+                  Icon(Icons.event_available,
+                      size: 48, color: Colors.grey[400]),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Aucune réservation',
+                    style: TextStyle(color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            )
+          else
+            ..._reservations.take(5).map((booking) {
+              final seat = booking['seat'] as Map<String, dynamic>?;
+              final room = seat?['room'] as Map<String, dynamic>?;
+              final spaceName = room?['name'] ?? 'Salle inconnue';
+              final seatLabel = seat?['label'] ?? '';
+              final date = booking['date'] ?? '';
+              final startTime = booking['startTime'] ?? '';
+              final endTime = booking['endTime'] ?? '';
+              final status = booking['status'] ?? 'pending';
+              final price = booking['price']?.toString() ?? '0';
+
+              String statusLabel;
+              Color statusColor;
+              switch (status) {
+                case 'confirmed':
+                  statusLabel = 'Confirmé';
+                  statusColor = const Color(0xFF10B981);
+                  break;
+                case 'cancelled':
+                  statusLabel = 'Annulé';
+                  statusColor = Colors.red;
+                  break;
+                case 'completed':
+                  statusLabel = 'Terminé';
+                  statusColor = Colors.grey;
+                  break;
+                default:
+                  statusLabel = 'En attente';
+                  statusColor = Colors.orange;
+              }
+
+              return Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: Row(
                   children: [
@@ -544,7 +674,7 @@ class DashboardScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(
-                        Icons.place,
+                        Icons.event_seat,
                         color: Color(0xFF6366F1),
                         size: 20,
                       ),
@@ -555,7 +685,7 @@ class DashboardScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            booking['space']!,
+                            '$spaceName - $seatLabel',
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
@@ -568,7 +698,7 @@ class DashboardScreen extends StatelessWidget {
                                   size: 12, color: Colors.grey[500]),
                               const SizedBox(width: 4),
                               Text(
-                                booking['date']!,
+                                date,
                                 style: TextStyle(
                                   color: Colors.grey[500],
                                   fontSize: 12,
@@ -579,7 +709,7 @@ class DashboardScreen extends StatelessWidget {
                                   size: 12, color: Colors.grey[500]),
                               const SizedBox(width: 4),
                               Text(
-                                booking['time']!,
+                                '$startTime - $endTime',
                                 style: TextStyle(
                                   color: Colors.grey[500],
                                   fontSize: 12,
@@ -594,7 +724,7 @@ class DashboardScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
-                          '${booking['price']}€',
+                          '${price}€',
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
@@ -605,25 +735,15 @@ class DashboardScreen extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: booking['status'] == 'confirmed'
-                                ? const Color(0xFF10B981).withOpacity(0.1)
-                                : Colors.grey[100],
+                            color: statusColor.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(4),
-                            border: Border.all(
-                              color: booking['status'] == 'confirmed'
-                                  ? const Color(0xFF10B981)
-                                  : Colors.grey[300]!,
-                            ),
+                            border: Border.all(color: statusColor),
                           ),
                           child: Text(
-                            booking['status'] == 'confirmed'
-                                ? 'Confirmé'
-                                : 'Terminé',
+                            statusLabel,
                             style: TextStyle(
                               fontSize: 10,
-                              color: booking['status'] == 'confirmed'
-                                  ? const Color(0xFF10B981)
-                                  : Colors.grey[600],
+                              color: statusColor,
                             ),
                           ),
                         ),
@@ -631,7 +751,8 @@ class DashboardScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-              )),
+              );
+            }),
         ],
       ),
     );
