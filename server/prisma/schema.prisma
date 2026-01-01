@@ -1,0 +1,142 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum SubscriptionPlan {
+  MONTHLY
+  QUARTERLY
+  SEMI_ANNUAL
+}
+
+enum SubscriptionStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  EXPIRED
+  CANCELLED
+}
+
+enum ReservationType {
+  HOURLY
+  DAILY
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+enum SeatStatus {
+  AVAILABLE
+  OCCUPIED
+  RESERVED
+  MAINTENANCE
+}
+
+enum NotificationType {
+  CONFIRMATION_RESERVATION
+  REMINDER_RESERVATION
+  SUBSCRIPTION_UPDATE
+}
+
+model User {
+  id            Int             @id @default(autoincrement())
+  name          String
+  email         String          @unique
+  password      String
+  phone         String?
+  role          Role            @default(USER)
+  refreshToken  String?
+  reservations  Reservation[]
+  subscriptions Subscription[]
+  notifications Notification[]
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+}
+
+model Room {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  capacity    Int
+  isAvailable Boolean  @default(true)
+  seats       Seat[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Seat {
+  id           Int           @id @default(autoincrement())
+  number       Int
+  positionX    Float?
+  positionY    Float?
+  status       SeatStatus    @default(AVAILABLE)
+  roomId       Int
+  room         Room          @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  reservations Reservation[]
+  
+  @@unique([roomId, number])
+}
+
+model Reservation {
+  id        Int               @id @default(autoincrement())
+  startTime DateTime
+  endTime   DateTime
+  type      ReservationType
+  status    ReservationStatus @default(PENDING)
+  userId    Int
+  seatId    Int
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  seat      Seat              @relation(fields: [seatId], references: [id], onDelete: Cascade)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  
+  @@index([startTime, endTime])
+  @@index([userId])
+  @@index([seatId])
+}
+
+model Subscription {
+  id         Int                @id @default(autoincrement())
+  plan       SubscriptionPlan
+  status     SubscriptionStatus @default(PENDING)
+  startDate  DateTime?
+  endDate    DateTime?
+  userId     Int
+  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  approvedBy Int?
+  approvedAt DateTime?
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+  
+  @@index([userId])
+}
+
+model Notification {
+  id        Int              @id @default(autoincrement())
+  title     String
+  message   String
+  type      NotificationType
+  isRead    Boolean          @default(false)
+  userId    Int
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime         @default(now())
+  
+  @@index([userId, isRead])
+}
