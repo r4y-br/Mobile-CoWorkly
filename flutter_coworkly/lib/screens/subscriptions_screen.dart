@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/app_provider.dart';
 
 class SubscriptionsScreen extends StatefulWidget {
   const SubscriptionsScreen({Key? key}) : super(key: key);
@@ -71,8 +73,10 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final appProvider = Provider.of<AppProvider>(context);
+    final user = appProvider.currentUser;
     final currentPlanData = plans.firstWhere((p) => p['id'] == currentPlan);
-    final usedHours = 24;
+    final usedHours = user?.hours ?? 0;
     final totalHours = currentPlanData['limits']['hours'] as int;
     final progressPercentage = totalHours > 0 ? (usedHours / totalHours) : 0.0;
 

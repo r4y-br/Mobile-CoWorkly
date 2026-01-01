@@ -13,9 +13,13 @@ class _AuthScreenState extends State<AuthScreen> {
   late PageController _pageController;
   late TextEditingController _emailController;
   late TextEditingController _passwordController;
+  late TextEditingController _confirmPasswordController;
   late TextEditingController _nameController;
+  late TextEditingController _phoneController;
   bool _showPassword = false;
-  int _currentPage = 0;
+  bool _showConfirmPassword = false;
+  bool _isSubmitting = false;
+  String? _submitError;
 
   @override
   void initState() {
@@ -23,7 +27,9 @@ class _AuthScreenState extends State<AuthScreen> {
     _pageController = PageController();
     _emailController = TextEditingController();
     _passwordController = TextEditingController();
+    _confirmPasswordController = TextEditingController();
     _nameController = TextEditingController();
+    _phoneController = TextEditingController();
   }
 
   @override
@@ -31,18 +37,65 @@ class _AuthScreenState extends State<AuthScreen> {
     _pageController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     _nameController.dispose();
+    _phoneController.dispose();
     super.dispose();
   }
 
-  void _handleLogin(AppProvider appProvider) {
-    appProvider.login(_emailController.text, _passwordController.text);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Connexion réussie! Bienvenue sur CoWorkly!'),
-        duration: Duration(seconds: 3),
-      ),
-    );
+  Future<void> _handleLogin(AppProvider appProvider,
+      {required bool isSignup}) async {
+    setState(() {
+      _isSubmitting = true;
+      _submitError = null;
+    });
+
+    try {
+      if (isSignup) {
+        // Validate passwords match
+        if (_passwordController.text != _confirmPasswordController.text) {
+          setState(() {
+            _isSubmitting = false;
+            _submitError = 'Les mots de passe ne correspondent pas.';
+          });
+          return;
+        }
+        await appProvider.register(
+          _emailController.text,
+          _passwordController.text,
+          _nameController.text,
+          phone:
+              _phoneController.text.isNotEmpty ? _phoneController.text : null,
+        );
+      } else {
+        await appProvider.login(
+          _emailController.text,
+          _passwordController.text,
+        );
+      }
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Connexion réussie! Bienvenue sur CoWorkly!'),
+          duration: Duration(seconds: 3),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _submitError = error.toString().replaceFirst('Exception: ', '');
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
+    }
   }
 
   @override
@@ -53,13 +106,17 @@ class _AuthScreenState extends State<AuthScreen> {
       backgroundColor: Colors.white,
       body: PageView(
         controller: _pageController,
-        onPageChanged: (index) => setState(() => _currentPage = index),
+        onPageChanged: (index) => setState(() {
+          _submitError = null;
+        }),
         children: [
           // Login Page
           _buildAuthPage(
             title: 'Connectez-vous à votre espace',
             showNameField: false,
-            onSubmit: () => _handleLogin(appProvider),
+            onSubmit: () {
+              _handleLogin(appProvider, isSignup: false);
+            },
             onNavigate: () => _pageController.nextPage(
               duration: const Duration(milliseconds: 300),
               curve: Curves.easeInOut,
@@ -70,7 +127,9 @@ class _AuthScreenState extends State<AuthScreen> {
           _buildAuthPage(
             title: 'Créez votre compte',
             showNameField: true,
-            onSubmit: () => _handleLogin(appProvider),
+            onSubmit: () {
+              _handleLogin(appProvider, isSignup: true);
+            },
             onNavigate: () => _pageController.previousPage(
               duration: const Duration(milliseconds: 300),
               curve: Curves.easeInOut,
@@ -178,6 +237,22 @@ class _AuthScreenState extends State<AuthScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
+                      TextField(
+                        controller: _phoneController,
+                        keyboardType: TextInputType.phone,
+                        decoration: InputDecoration(
+                          labelText: 'Téléphone',
+                          prefixIcon: const Icon(Icons.phone),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
                     ],
                     TextField(
                       controller: _emailController,
@@ -220,6 +295,33 @@ class _AuthScreenState extends State<AuthScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
+                      if (showNameField) ...[
+                        TextField(
+                          controller: _confirmPasswordController,
+                          obscureText: !_showConfirmPassword,
+                          decoration: InputDecoration(
+                            labelText: 'Confirmer le mot de passe',
+                            prefixIcon: const Icon(Icons.lock_outline),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _showConfirmPassword
+                                    ? Icons.visibility
+                                    : Icons.visibility_off,
+                              ),
+                              onPressed: () => setState(() =>
+                                  _showConfirmPassword = !_showConfirmPassword),
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
                     ],
                     if (!showNameField && showPasswordField)
                       Align(
@@ -234,23 +336,43 @@ class _AuthScreenState extends State<AuthScreen> {
                       width: double.infinity,
                       height: 48,
                       child: ElevatedButton(
-                        onPressed: onSubmit,
+                        onPressed: _isSubmitting ? null : onSubmit,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF6366F1),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        child: Text(
-                          !showNameField && !showPasswordField
-                              ? 'Réinitialiser'
-                              : showNameField
-                              ? "S'inscrire"
-                              : 'Se connecter',
-                          style: const TextStyle(color: Colors.white),
-                        ),
+                        child: _isSubmitting
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : Text(
+                                !showNameField && !showPasswordField
+                                    ? 'Réinitialiser'
+                                    : showNameField
+                                        ? "S'inscrire"
+                                        : 'Se connecter',
+                                style: const TextStyle(color: Colors.white),
+                              ),
                       ),
                     ),
+                    if (_submitError != null && showPasswordField) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        _submitError!,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.red[600],
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                     if (!showNameField && showPasswordField) ...[
                       const SizedBox(height: 16),
                       Row(

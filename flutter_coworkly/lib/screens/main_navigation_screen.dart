@@ -26,14 +26,12 @@ class MainNavigationScreen extends StatelessWidget {
           'spaceSelection',
           'room',
           'booking',
-          'admin',
         ].contains(currentScreen);
 
         return Scaffold(
           body: _buildScreen(currentScreen),
-          bottomNavigationBar: !isAuthScreen && !isDetailScreen
-              ? const BottomNav()
-              : null,
+          bottomNavigationBar:
+              !isAuthScreen && !isDetailScreen ? const BottomNav() : null,
         );
       },
     );
