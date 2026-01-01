@@ -52,8 +52,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final availabilityColor = occupancyPercentage < 30
         ? const Color(0xFF10B981)
         : occupancyPercentage < 70
-        ? const Color(0xFFF59E0B)
-        : const Color(0xFFEF4444);
+            ? const Color(0xFFF59E0B)
+            : const Color(0xFFEF4444);
 
     return Scaffold(
       body: CustomScrollView(
@@ -345,7 +345,9 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                               Text(
                                 coWorkingInfo.weekdayHours,
-                                style: Theme.of(context).textTheme.bodyMedium
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
                                     ?.copyWith(fontWeight: FontWeight.bold),
                               ),
                             ],
@@ -362,7 +364,9 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                               Text(
                                 coWorkingInfo.weekendHours,
-                                style: Theme.of(context).textTheme.bodyMedium
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
                                     ?.copyWith(fontWeight: FontWeight.bold),
                               ),
                             ],
@@ -384,41 +388,46 @@ class _HomeScreenState extends State<HomeScreen> {
                             style: Theme.of(context).textTheme.headlineSmall,
                           ),
                           const SizedBox(height: 16),
-                          GridView.count(
-                            crossAxisCount: 2,
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            mainAxisSpacing: 12,
-                            crossAxisSpacing: 12,
-                            children: coWorkingInfo.amenities
-                                .map(
-                                  (amenity) => Container(
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey[100],
-                                      borderRadius: BorderRadius.circular(12),
+                          LayoutBuilder(
+                            builder: (context, constraints) {
+                              final tileWidth = (constraints.maxWidth - 12) / 2;
+                              return Wrap(
+                                spacing: 12,
+                                runSpacing: 12,
+                                children:
+                                    coWorkingInfo.amenities.map((amenity) {
+                                  return SizedBox(
+                                    width: tileWidth,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey[100],
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.wifi,
+                                            color: const Color(0xFF10B981),
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            amenity.label,
+                                            textAlign: TextAlign.center,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodySmall,
+                                          ),
+                                        ],
+                                      ),
                                     ),
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Icon(
-                                          Icons.wifi,
-                                          color: const Color(0xFF10B981),
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Text(
-                                          amenity.label,
-                                          textAlign: TextAlign.center,
-                                          style: Theme.of(
-                                            context,
-                                          ).textTheme.bodySmall,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                )
-                                .toList(),
+                                  );
+                                }).toList(),
+                              );
+                            },
                           ),
                         ],
                       ),
