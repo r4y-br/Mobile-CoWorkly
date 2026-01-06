@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_provider.dart';
+import '../services/stats_api.dart';
+import '../services/reservations_api.dart';
 
 class AdminScreen extends StatefulWidget {
   const AdminScreen({Key? key}) : super(key: key);
@@ -12,16 +14,92 @@ class AdminScreen extends StatefulWidget {
 class _AdminScreenState extends State<AdminScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final StatsApi _statsApi = StatsApi();
+  final ReservationsApi _reservationsApi = ReservationsApi();
+  
+  Map<String, dynamic>? _dashboardStats;
+  List<Map<String, dynamic>> _weeklyStats = [];
+  List<dynamic> _recentBookings = [];
+  bool _isLoading = true;
+  String? _error;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final appProvider = Provider.of<AppProvider>(context, listen: false);
+    final token = appProvider.authToken;
+    if (token == null) return;
+
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final results = await Future.wait([
+        _statsApi.fetchDashboardStats(token: token),
+        _statsApi.fetchWeeklyStats(token: token),
+        _reservationsApi.fetchAllReservations(token: token),
+      ]);
+      
+      print('Stats results: ${results[0]}');
+      print('Weekly results: ${results[1]}');
+      print('Reservations results: ${results[2]}');
+      
+      final reservations = results[2] as List;
+      print('Reservations count: ${reservations.length}');
+      
+      setState(() {
+        _dashboardStats = (results[0] as Map<String, dynamic>)['stats'];
+        _weeklyStats = results[1] as List<Map<String, dynamic>>;
+        _recentBookings = reservations.take(5).toList().cast<Map<String, dynamic>>();
+        print('Dashboard stats: $_dashboardStats');
+        print('Weekly stats: $_weeklyStats');
+        print('Recent bookings count: ${_recentBookings.length}');
+        _isLoading = false;
+      });
+      
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Chargé: ${reservations.length} réservations'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e, stackTrace) {
+      print('Error loading data: $e');
+      print('Stack trace: $stackTrace');
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+      
+      // Show error message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    }
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _statsApi.dispose();
+    _reservationsApi.dispose();
     super.dispose();
   }
 
@@ -132,6 +210,10 @@ class _AdminScreenState extends State<AdminScreen>
                       ],
                     ),
                   ),
+                  IconButton(
+                    icon: const Icon(Icons.refresh, color: Colors.white),
+                    onPressed: _loadData,
+                  ),
                   Container(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -161,10 +243,10 @@ class _AdminScreenState extends State<AdminScreen>
             children: [
               Expanded(
                 child: _buildStatCard(
-                  'Revenus',
-                  '12.5k€',
-                  '+12% ce mois',
-                  Icons.attach_money,
+                  'Utilisateurs',
+                  _dashboardStats != null ? '${_dashboardStats!['totalUsers'] ?? 0}' : '--',
+                  'Total inscrits',
+                  Icons.people,
                   Colors.blue,
                 ),
               ),
@@ -172,8 +254,8 @@ class _AdminScreenState extends State<AdminScreen>
               Expanded(
                 child: _buildStatCard(
                   'Réservations',
-                  '180',
-                  '+8% ce mois',
+                  _dashboardStats != null ? '${_dashboardStats!['totalReservations'] ?? 0}' : '--',
+                  'Total',
                   Icons.calendar_today,
                   Colors.purple,
                 ),
@@ -247,10 +329,29 @@ class _AdminScreenState extends State<AdminScreen>
   }
 
   Widget _buildOverviewTab() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_error != null) {
+      return Center(child: Text('Erreur: $_error'));
+    }
+    
+    // Build weekly stats bars
+    final days = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+    final weeklyValues = List<int>.filled(7, 0);
+    for (var stat in _weeklyStats) {
+      final dayName = stat['day'] as String? ?? '';
+      final count = stat['count'] as int? ?? 0;
+      final dayIndex = days.indexOf(dayName);
+      if (dayIndex >= 0) {
+        weeklyValues[dayIndex] = count;
+      }
+    }
+    
     return ListView(
       padding: const EdgeInsets.fromLTRB(24, 60, 24, 24),
       children: [
-        _buildSectionTitle('Visiteurs cette semaine'),
+        _buildSectionTitle('Réservations cette semaine'),
         const SizedBox(height: 16),
         Container(
           height: 200,
@@ -269,15 +370,7 @@ class _AdminScreenState extends State<AdminScreen>
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildBar('Lun', 45),
-              _buildBar('Mar', 52),
-              _buildBar('Mer', 48),
-              _buildBar('Jeu', 61),
-              _buildBar('Ven', 55),
-              _buildBar('Sam', 38),
-              _buildBar('Dim', 28),
-            ],
+            children: List.generate(7, (i) => _buildBar(days[i], weeklyValues[i] * 10)),
           ),
         ),
         const SizedBox(height: 24),
@@ -285,50 +378,56 @@ class _AdminScreenState extends State<AdminScreen>
         const SizedBox(height: 16),
         _buildRecentBookingsList(),
         const SizedBox(height: 24),
-        _buildSectionTitle('Salles'),
+        _buildSectionTitle('Statistiques globales'),
         const SizedBox(height: 16),
-        _buildSpaceCard(
-          'Creative Hub',
-          16,
-          12,
-          2500,
-          45,
-        ),
-        const SizedBox(height: 16),
-        _buildSpaceCard(
-          'Tech Space',
-          20,
-          15,
-          3200,
-          52,
-        ),
-        const SizedBox(height: 16),
-        _buildSpaceCard(
-          'Work Lounge',
-          12,
-          8,
-          1800,
-          38,
-        ),
-        const SizedBox(height: 16),
-        _buildSpaceCard(
-          'Meeting Room',
-          8,
-          6,
-          1200,
-          28,
-        ),
+        _buildGlobalStatsCard(),
       ],
     );
   }
 
+  Widget _buildGlobalStatsCard() {
+    final totalRooms = _dashboardStats?['totalRooms'] ?? 0;
+    final totalSeats = _dashboardStats?['totalSeats'] ?? 0;
+    final availableSeats = _dashboardStats?['availableSeats'] ?? 0;
+    final occupancy = totalSeats > 0 ? ((totalSeats - availableSeats) / totalSeats * 100).round() : 0;
+    
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildSpaceStat('Salles', '$totalRooms'),
+              _buildSpaceStat('Places totales', '$totalSeats'),
+              _buildSpaceStat('Disponibles', '$availableSeats'),
+              _buildSpaceStat('Occupation', '$occupancy%'),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildBar(String label, int value) {
+    final clampedValue = value.clamp(0, 100);
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
         Container(
           width: 8,
-          height: value * 2.0,
+          height: clampedValue * 1.5,
           decoration: BoxDecoration(
             color: const Color(0xFF6366F1),
             borderRadius: BorderRadius.circular(4),
@@ -347,30 +446,19 @@ class _AdminScreenState extends State<AdminScreen>
   }
 
   Widget _buildRecentBookingsList() {
-    final bookings = [
-      {
-        'user': 'Marie Laurent',
-        'initials': 'ML',
-        'space': 'Creative Hub - Siège 5',
-        'amount': '25€',
-        'status': 'Confirmé'
-      },
-      {
-        'user': 'Thomas Martin',
-        'initials': 'TM',
-        'space': 'Tech Space - Siège 12',
-        'amount': '30€',
-        'status': 'Confirmé'
-      },
-      {
-        'user': 'Sophie Bernard',
-        'initials': 'SB',
-        'space': 'Work Lounge - Siège 3',
-        'amount': '35€',
-        'status': 'Terminé'
-      },
-    ];
-
+    if (_recentBookings.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: const Center(
+          child: Text('Aucune réservation récente'),
+        ),
+      );
+    }
+    
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -385,7 +473,15 @@ class _AdminScreenState extends State<AdminScreen>
         ],
       ),
       child: Column(
-        children: bookings.map((booking) {
+        children: _recentBookings.map((booking) {
+          final user = booking['user'];
+          final seat = booking['seat'];
+          final room = seat?['room'];
+          final userName = user?['name'] ?? 'Utilisateur';
+          final initials = userName.split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join().toUpperCase();
+          final spaceName = '${room?['name'] ?? 'Salle'} - Siège ${seat?['number'] ?? '?'}';
+          final status = booking['status'] ?? 'PENDING';
+          
           return Padding(
             padding: const EdgeInsets.only(bottom: 16),
             child: Row(
@@ -393,7 +489,7 @@ class _AdminScreenState extends State<AdminScreen>
                 CircleAvatar(
                   backgroundColor: const Color(0xFF6366F1).withOpacity(0.1),
                   child: Text(
-                    booking['initials']!,
+                    initials,
                     style: const TextStyle(
                       color: Color(0xFF6366F1),
                       fontWeight: FontWeight.bold,
@@ -407,14 +503,14 @@ class _AdminScreenState extends State<AdminScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        booking['user']!,
+                        userName,
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
                         ),
                       ),
                       Text(
-                        booking['space']!,
+                        spaceName,
                         style: TextStyle(
                           color: Colors.grey[600],
                           fontSize: 12,
@@ -423,37 +519,24 @@ class _AdminScreenState extends State<AdminScreen>
                     ],
                   ),
                 ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      booking['amount']!,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF6366F1),
-                      ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: status == 'CONFIRMED'
+                        ? const Color(0xFF10B981).withOpacity(0.1)
+                        : Colors.orange.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    status == 'CONFIRMED' ? 'Confirmé' : status,
+                    style: TextStyle(
+                      color: status == 'CONFIRMED'
+                          ? const Color(0xFF10B981)
+                          : Colors.orange,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: booking['status'] == 'Confirmé'
-                            ? const Color(0xFF10B981).withOpacity(0.1)
-                            : Colors.grey[100],
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        booking['status']!,
-                        style: TextStyle(
-                          color: booking['status'] == 'Confirmé'
-                              ? const Color(0xFF10B981)
-                              : Colors.grey[600],
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ],
             ),

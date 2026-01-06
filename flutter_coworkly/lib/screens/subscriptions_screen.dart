@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_provider.dart';
+import '../services/subscription_api.dart';
 
 class SubscriptionsScreen extends StatefulWidget {
   const SubscriptionsScreen({Key? key}) : super(key: key);
@@ -10,29 +11,20 @@ class SubscriptionsScreen extends StatefulWidget {
 }
 
 class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
-  String currentPlan = 'starter';
-  bool isYearly = false;
+  String currentPlan = 'NONE';
+  String currentStatus = 'INACTIVE';
+  int usedHours = 0;
+  int totalHours = 0;
+  int remainingHours = 0;
+  bool isLoading = true;
   String? selectedPlan;
+  bool isSubmitting = false;
+  String? errorMessage;
 
   final List<Map<String, dynamic>> plans = [
     {
-      'id': 'free',
-      'name': 'Gratuit',
-      'price': 0,
-      'icon': Icons.star,
-      'color': Colors.grey,
-      'features': [
-        '2 heures par mois',
-        'Accès aux espaces standards',
-        'WiFi basique',
-        'Support par email',
-      ],
-      'limits': {'hours': 2, 'spaces': 'standards'},
-      'popular': false,
-    },
-    {
-      'id': 'starter',
-      'name': 'Starter',
+      'id': 'MONTHLY',
+      'name': 'Mensuel',
       'price': 49,
       'icon': Icons.flash_on,
       'color': Colors.blue,
@@ -47,37 +39,112 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
       'popular': false,
     },
     {
-      'id': 'pro',
-      'name': 'Pro',
-      'price': 149,
-      'icon': Icons.emoji_events, // Crown replacement
+      'id': 'QUARTERLY',
+      'name': 'Trimestriel',
+      'price': 129,
+      'icon': Icons.star,
       'color': const Color(0xFF10B981),
       'features': [
-        'Heures illimitées',
+        '120 heures sur 3 mois',
         'Tous les espaces premium',
         'Salles de réunion incluses',
         'WiFi haute vitesse',
         'Support prioritaire 24/7',
-        'Casier personnel',
-        'Café & snacks offerts',
+        '-12% vs mensuel',
       ],
-      'limits': {'hours': -1, 'spaces': 'premium'},
+      'limits': {'hours': 120, 'spaces': 'premium'},
       'popular': true,
+    },
+    {
+      'id': 'SEMI_ANNUAL',
+      'name': 'Semestriel',
+      'price': 239,
+      'icon': Icons.emoji_events,
+      'color': Colors.purple,
+      'features': [
+        '250 heures sur 6 mois',
+        'Tous les espaces premium',
+        'Salles de réunion illimitées',
+        'WiFi haute vitesse',
+        'Support prioritaire 24/7',
+        'Casier personnel',
+        '-20% vs mensuel',
+      ],
+      'limits': {'hours': 250, 'spaces': 'premium'},
+      'popular': false,
     },
   ];
 
-  int getPrice(int basePrice) {
-    if (basePrice == 0) return 0;
-    return isYearly ? (basePrice * 10).round() : basePrice;
+  @override
+  void initState() {
+    super.initState();
+    _loadSubscription();
+  }
+
+  Future<void> _loadSubscription() async {
+    final appProvider = Provider.of<AppProvider>(context, listen: false);
+    final token = appProvider.authToken;
+    if (token == null) return;
+
+    try {
+      final data = await SubscriptionApi.getMySubscription(token);
+      setState(() {
+        currentPlan = data['plan'] ?? 'NONE';
+        currentStatus = data['status'] ?? 'INACTIVE';
+        usedHours = data['usedHours'] ?? 0;
+        totalHours = data['totalHours'] ?? 0;
+        remainingHours = data['remainingHours'] ?? 0;
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+        errorMessage = e.toString();
+      });
+    }
+  }
+
+  Future<void> _subscribe(String plan) async {
+    final appProvider = Provider.of<AppProvider>(context, listen: false);
+    final token = appProvider.authToken;
+    if (token == null) return;
+
+    setState(() {
+      isSubmitting = true;
+      errorMessage = null;
+    });
+
+    try {
+      await SubscriptionApi.subscribe(token, plan);
+      await _loadSubscription();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Demande d\'abonnement envoyée ! En attente d\'approbation.'),
+            backgroundColor: Color(0xFF10B981),
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        errorMessage = e.toString();
+      });
+    } finally {
+      setState(() {
+        isSubmitting = false;
+        selectedPlan = null;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final appProvider = Provider.of<AppProvider>(context);
     final user = appProvider.currentUser;
-    final currentPlanData = plans.firstWhere((p) => p['id'] == currentPlan);
-    final usedHours = user?.hours ?? 0;
-    final totalHours = currentPlanData['limits']['hours'] as int;
+    final currentPlanData = plans.firstWhere(
+      (p) => p['id'] == currentPlan,
+      orElse: () => {'name': 'Aucun', 'icon': Icons.block, 'limits': {'hours': 0}},
+    );
     final progressPercentage = totalHours > 0 ? (usedHours / totalHours) : 0.0;
 
     return Scaffold(
@@ -259,13 +326,17 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
                         Row(
                           children: [
                             Icon(
-                              Icons.calendar_today,
+                              currentStatus == 'ACTIVE' ? Icons.check_circle : Icons.pending,
                               color: Colors.white.withOpacity(0.9),
                               size: 16,
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              'Renouvellement le 19 déc. 2025',
+                              currentStatus == 'ACTIVE' 
+                                  ? 'Abonnement actif' 
+                                  : currentStatus == 'PENDING' 
+                                      ? 'En attente d\'approbation'
+                                      : 'Aucun abonnement actif',
                               style: TextStyle(
                                 color: Colors.white.withOpacity(0.9),
                                 fontSize: 12,
@@ -280,56 +351,27 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
               ],
             ),
             const SizedBox(height: 80),
-            // Billing Toggle
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Switch(
-                      value: isYearly,
-                      onChanged: (value) {
-                        setState(() {
-                          isYearly = value;
-                        });
-                      },
-                      activeColor: const Color(0xFF6366F1),
-                    ),
-                    const SizedBox(width: 12),
-                    const Text('Facturation annuelle'),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF10B981),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Text(
-                        '-17%',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
+            // Loading or error
+            if (isLoading)
+              const Padding(
+                padding: EdgeInsets.all(24),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+            if (errorMessage != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    errorMessage!,
+                    style: const TextStyle(color: Colors.red),
+                  ),
                 ),
               ),
-            ),
             const SizedBox(height: 24),
             // Plans List
             Padding(
@@ -338,7 +380,6 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
                 children: plans.map((plan) {
                   final isSelected = selectedPlan == plan['id'];
                   final isCurrent = currentPlan == plan['id'];
-                  final price = getPrice(plan['price']);
 
                   return GestureDetector(
                     onTap: () {
@@ -425,14 +466,14 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
                                         textBaseline: TextBaseline.alphabetic,
                                         children: [
                                           Text(
-                                            '$price€',
+                                            '${plan['price']}€',
                                             style: const TextStyle(
                                               fontSize: 24,
                                               fontWeight: FontWeight.bold,
                                             ),
                                           ),
                                           Text(
-                                            isYearly ? '/an' : '/mois',
+                                            plan['id'] == 'MONTHLY' ? '/mois' : plan['id'] == 'QUARTERLY' ? '/trim.' : '/sem.',
                                             style: TextStyle(
                                               fontSize: 12,
                                               color: Colors.grey[600],
@@ -606,7 +647,7 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: () {},
+                          onPressed: isSubmitting ? null : () => _subscribe(selectedPlan!),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF6366F1),
                             foregroundColor: Colors.white,
@@ -615,7 +656,16 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
                             ),
                             padding: const EdgeInsets.symmetric(vertical: 16),
                           ),
-                          child: const Text('Confirmer le changement'),
+                          child: isSubmitting 
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text('Confirmer le changement'),
                         ),
                       ),
                     ],

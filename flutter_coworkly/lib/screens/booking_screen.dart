@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_provider.dart';
 import '../services/reservations_api.dart';
+import '../services/subscription_api.dart';
 
 class BookingScreen extends StatefulWidget {
   const BookingScreen({Key? key}) : super(key: key);
@@ -20,6 +21,11 @@ class _BookingScreenState extends State<BookingScreen> {
   bool _isSubmitting = false;
   String? _submitError;
   final ReservationsApi _bookingApi = ReservationsApi();
+  
+  // Subscription info
+  int _remainingHours = 0;
+  String _subscriptionPlan = 'NONE';
+  bool _hasActiveSubscription = false;
 
   final List<Map<String, dynamic>> bookingTypes = [
     {'id': 'hourly', 'label': 'À l\'heure', 'price': 5, 'unit': 'heure'},
@@ -39,6 +45,29 @@ class _BookingScreenState extends State<BookingScreen> {
     '17:00',
     '18:00',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSubscriptionInfo();
+  }
+
+  Future<void> _loadSubscriptionInfo() async {
+    final appProvider = Provider.of<AppProvider>(context, listen: false);
+    final token = appProvider.authToken;
+    if (token == null) return;
+
+    try {
+      final data = await SubscriptionApi.getMySubscription(token);
+      setState(() {
+        _remainingHours = data['remainingHours'] ?? 0;
+        _subscriptionPlan = data['plan'] ?? 'NONE';
+        _hasActiveSubscription = data['status'] == 'ACTIVE';
+      });
+    } catch (e) {
+      // Ignore errors, just means no subscription
+    }
+  }
 
   @override
   void dispose() {
@@ -340,8 +369,56 @@ class _BookingScreenState extends State<BookingScreen> {
   }
 
   Widget _buildStep1(Map<String, dynamic> selectedConfig) {
+    final estimatedHours = _estimateHours();
+    final hasEnoughHours = _remainingHours >= estimatedHours;
+    
     return Column(
       children: [
+        // Subscription info card
+        if (_hasActiveSubscription)
+          Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: hasEnoughHours 
+                  ? [const Color(0xFF10B981), const Color(0xFF059669)]
+                  : [Colors.orange, Colors.deepOrange],
+              ),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  hasEnoughHours ? Icons.check_circle : Icons.warning,
+                  color: Colors.white,
+                  size: 32,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Abonnement $_subscriptionPlan',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        '$_remainingHours heures restantes',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.9),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
         Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(

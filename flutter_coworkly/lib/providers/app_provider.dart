@@ -61,6 +61,22 @@ class AppProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> updateProfile({String? name, String? phone}) async {
+    if (_authToken == null) {
+      throw Exception('Not authenticated');
+    }
+    final response = await _authApi.updateProfile(
+      token: _authToken!,
+      name: name,
+      phone: phone,
+    );
+    final userData = response['user'] as Map<String, dynamic>?;
+    if (userData != null) {
+      _currentUser = _buildUserFromApi(userData);
+      notifyListeners();
+    }
+  }
+
   void logout() {
     _isLoggedIn = false;
     _authToken = null;
