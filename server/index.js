@@ -6,6 +6,8 @@ import roomsRoutes from './src/routes/rooms.js';
 import seatsRoutes from './src/routes/seats.js';
 import reservationsRoutes from './src/routes/reservations.js';
 import notificationsRoutes from './src/routes/notifications.js';
+import subscriptionsRoutes from './src/routes/subscriptions.js';
+import usersRoutes from './src/routes/users.js';
 dotenv.config();
 
 const app = express();
@@ -22,6 +24,8 @@ app.use('/rooms', roomsRoutes);
 app.use('/seats', seatsRoutes);
 app.use('/reservations', reservationsRoutes);
 app.use('/notifications', notificationsRoutes);
+app.use('/subscriptions', subscriptionsRoutes);
+app.use('/users', usersRoutes);
 
 // just a health check endpoint
 app.get('/health', (req, res) => {
@@ -42,3 +46,5 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
+
+export default app;

@@ -198,6 +198,21 @@ async function main() {
     });
     console.log(`✅ Created sample reservation (ID: ${reservation.id})`);
 
+    // Create subscriptions
+    const now = new Date();
+    const activeSubscription = await prisma.subscription.create({
+        data: {
+            userId: user.id,
+            plan: 'MONTHLY',
+            status: 'ACTIVE',
+            startDate: new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000),
+            endDate: new Date(now.getTime() + 20 * 24 * 60 * 60 * 1000),
+            approvedBy: admin.id,
+            approvedAt: new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000),
+        },
+    });
+    console.log(`✅ Created active subscription for ${user.email}`);
+
     console.log('\n🎉 Seed completed successfully!');
     console.log('\n📋 Test Credentials:');
     console.log('   User: laith@example.com / Laith1818@');

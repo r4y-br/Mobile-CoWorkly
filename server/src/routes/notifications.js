@@ -16,16 +16,16 @@ router.use(authenticate);
 // Get notifications
 router.get('/', getAllNotifications);
 
+// Mark all notifications as read (must come before /:id)
+router.patch('/read-all', markAllAsRead);
+
 // Mark single notification as read
 router.patch('/:id/read', markAsRead);
 
-// Mark all notifications as read
-router.patch('/read-all', markAllAsRead);
+// Delete all notifications (must be handled with specific endpoint or query param)
+router.delete('/all', deleteAllNotifications);
 
 // Delete single notification
 router.delete('/:id', deleteNotification);
-
-// Delete all notifications
-router.delete('/', deleteAllNotifications);
 
 export default router;

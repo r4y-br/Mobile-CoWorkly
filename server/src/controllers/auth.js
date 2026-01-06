@@ -3,8 +3,8 @@ import { isValidEmail, isValidPassword } from "../../lib/Validators.js";
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET;
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
+const JWT_SECRET = process.env.JWT_SECRET || 'test-access-secret';
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'test-refresh-secret';
 
 const generateAccessToken = (userId, role) => {
     return jwt.sign({ id: userId, role }, JWT_SECRET, { expiresIn: '15m' });
