@@ -694,25 +694,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           const SizedBox(height: 2),
                           Row(
                             children: [
-                              Icon(Icons.calendar_today,
-                                  size: 12, color: Colors.grey[500]),
-                              const SizedBox(width: 4),
-                              Text(
-                                date,
-                                style: TextStyle(
-                                  color: Colors.grey[500],
-                                  fontSize: 12,
-                                ),
-                              ),
+                              const Icon(Icons.location_on),
                               const SizedBox(width: 8),
-                              Icon(Icons.access_time,
-                                  size: 12, color: Colors.grey[500]),
-                              const SizedBox(width: 4),
-                              Text(
-                                '$startTime - $endTime',
-                                style: TextStyle(
-                                  color: Colors.grey[500],
-                                  fontSize: 12,
+                              Expanded(
+                                // <--- On ajoute Expanded ici
+                                child: Text(
+                                  "Ton texte qui ne dépassera plus",
+                                  overflow: TextOverflow
+                                      .ellipsis, // Ajoute ceci pour mettre "..." si c'est trop long
+                                  maxLines:
+                                      1, // Optionnel : limite à une seule ligne
                                 ),
                               ),
                             ],

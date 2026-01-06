@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "prisma": {
+    "seed": "node prisma/seed.js"
+  },
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
@@ -20,7 +23,6 @@
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
     "express": "^5.2.1",
-    "express-rate-limit": "^8.2.1",
     "express-validator": "^7.3.1",
     "jsonwebtoken": "^9.0.3",
     "pg": "^8.16.3"
@@ -34,4 +36,6 @@
     "supertest": "^7.1.4",
     "vitest": "^4.0.16"
   }
+  
+
 }

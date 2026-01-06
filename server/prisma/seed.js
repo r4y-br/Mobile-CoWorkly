@@ -1,10 +1,23 @@
 import { prisma } from '../lib/prisma.js';
 import bcrypt from 'bcryptjs';
+import { 
+    SubscriptionPlan, 
+    SubscriptionStatus, 
+    ReservationStatus, 
+    ReservationType, 
+    SeatStatus 
+} from '@prisma/client';
 
 async function main() {
     console.log('🌱 Starting seed...');
 
-    // Create test user: laith@example.com
+    // 1. Nettoyage (Optionnel mais recommandé pour éviter les doublons de réservations)
+    await prisma.reservation.deleteMany({});
+    await prisma.subscription.deleteMany({});
+    await prisma.notification.deleteMany({});
+    await prisma.seat.deleteMany({});
+
+    // 2. Création des utilisateurs
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash('Laith1818@', salt);
 
@@ -19,189 +32,100 @@ async function main() {
             role: 'USER',
         },
     });
-    console.log(`✅ Created user: ${user.email} (ID: ${user.id})`);
+    console.log(`✅ Created user: ${user.email}`);
 
-    // Create admin user
-    const adminPassword = await bcrypt.hash('Admin1818@', salt);
-    const admin = await prisma.user.upsert({
+    // Admin
+    await prisma.user.upsert({
         where: { email: 'admin@coworkly.com' },
         update: {},
         create: {
             name: 'Admin',
             email: 'admin@coworkly.com',
-            password: adminPassword,
+            password: await bcrypt.hash('Admin1818@', salt),
             phone: '+216 99 999 999',
             role: 'ADMIN',
         },
     });
-    console.log(`✅ Created admin: ${admin.email} (ID: ${admin.id})`);
 
-    // Create Rooms (Spaces)
-    const rooms = await Promise.all([
-        prisma.room.upsert({
-            where: { id: 1 },
-            update: {},
-            create: {
-                id: 1,
-                name: 'Creative Hub',
-                description: 'Un espace créatif et inspirant pour les designers et artistes. Lumineux avec vue sur le jardin.',
-                capacity: 16,
-                isAvailable: true,
-            },
-        }),
-        prisma.room.upsert({
-            where: { id: 2 },
-            update: {},
-            create: {
-                id: 2,
-                name: 'Tech Space',
-                description: 'Espace high-tech équipé pour les développeurs et startups. Connexion fibre ultra-rapide.',
-                capacity: 20,
-                isAvailable: true,
-            },
-        }),
-        prisma.room.upsert({
-            where: { id: 3 },
-            update: {},
-            create: {
-                id: 3,
-                name: 'Work Lounge',
-                description: 'Espace confortable et détendu pour le travail collaboratif. Canapés et tables basses.',
-                capacity: 12,
-                isAvailable: true,
-            },
-        }),
-        prisma.room.upsert({
-            where: { id: 4 },
-            update: {},
-            create: {
-                id: 4,
-                name: 'Meeting Room',
-                description: 'Salle de réunion professionnelle avec écran et visioconférence.',
-                capacity: 8,
-                isAvailable: true,
-            },
-        }),
-    ]);
-    console.log(`✅ Created ${rooms.length} rooms`);
+    // 3. Création des Salles
+    const room1 = await prisma.room.upsert({
+        where: { id: 1 },
+        update: {},
+        create: {
+            id: 1,
+            name: 'Creative Hub',
+            description: 'Espace créatif et inspirant.',
+            capacity: 16,
+            isAvailable: true,
+        },
+    });
 
-    // Create Seats for each room
+    // 4. Création des Sièges
     const seatsData = [];
-    
-    // Creative Hub - 16 seats (4x4 grid)
     for (let i = 1; i <= 16; i++) {
         seatsData.push({
             roomId: 1,
             number: i,
             positionX: ((i - 1) % 4) * 0.2 + 0.2,
             positionY: Math.floor((i - 1) / 4) * 0.2 + 0.2,
-            status: i <= 12 ? 'AVAILABLE' : (i === 13 ? 'RESERVED' : 'AVAILABLE'),
+            status: SeatStatus.AVAILABLE,
         });
     }
-
-    // Tech Space - 20 seats (4x5 grid)
-    for (let i = 1; i <= 20; i++) {
-        seatsData.push({
-            roomId: 2,
-            number: i,
-            positionX: ((i - 1) % 4) * 0.2 + 0.2,
-            positionY: Math.floor((i - 1) / 4) * 0.2 + 0.15,
-            status: i <= 15 ? 'AVAILABLE' : (i === 16 ? 'OCCUPIED' : 'AVAILABLE'),
-        });
-    }
-
-    // Work Lounge - 12 seats (3x4 grid)
-    for (let i = 1; i <= 12; i++) {
-        seatsData.push({
-            roomId: 3,
-            number: i,
-            positionX: ((i - 1) % 3) * 0.25 + 0.2,
-            positionY: Math.floor((i - 1) / 3) * 0.2 + 0.2,
-            status: 'AVAILABLE',
-        });
-    }
-
-    // Meeting Room - 8 seats (2x4 grid)
-    for (let i = 1; i <= 8; i++) {
-        seatsData.push({
-            roomId: 4,
-            number: i,
-            positionX: ((i - 1) % 2) * 0.3 + 0.35,
-            positionY: Math.floor((i - 1) / 2) * 0.2 + 0.2,
-            status: 'AVAILABLE',
-        });
-    }
-
-    // Delete existing seats and recreate
-    await prisma.seat.deleteMany({});
     await prisma.seat.createMany({ data: seatsData });
-    console.log(`✅ Created ${seatsData.length} seats`);
+    
+    // On récupère UN siège pour les réservations de test
+    const firstSeat = await prisma.seat.findFirst({ where: { roomId: 1 } });
+    console.log(`✅ Created seats and selected seat #${firstSeat.number} for tests`);
 
-    // Create Notifications for the test user
-    const notifications = await Promise.all([
-        prisma.notification.create({
-            data: {
-                userId: user.id,
-                type: 'CONFIRMATION_RESERVATION',
-                title: 'Réservation confirmée',
-                message: 'Votre réservation pour Creative Hub (siège 5) a été confirmée pour demain à 09:00.',
-                isRead: false,
-            },
-        }),
-        prisma.notification.create({
-            data: {
-                userId: user.id,
-                type: 'REMINDER_RESERVATION',
-                title: 'Rappel de réservation',
-                message: 'N\'oubliez pas votre réservation demain à 09:00 dans Tech Space.',
-                isRead: false,
-            },
-        }),
-        prisma.notification.create({
-            data: {
-                userId: user.id,
-                type: 'SUBSCRIPTION_UPDATE',
-                title: 'Mise à jour abonnement',
-                message: 'Votre abonnement mensuel a été renouvelé avec succès.',
-                isRead: true,
-            },
-        }),
-        prisma.notification.create({
-            data: {
-                userId: user.id,
-                type: 'CONFIRMATION_RESERVATION',
-                title: 'Nouvelle réservation',
-                message: 'Bienvenue chez CoWorkly! Votre première réservation est prête.',
-                isRead: false,
-            },
-        }),
-    ]);
-    console.log(`✅ Created ${notifications.length} notifications for ${user.email}`);
+    // 5. Création de l'Abonnement Actif
+    const now = new Date();
+    const nextMonth = new Date();
+    nextMonth.setMonth(now.getMonth() + 1);
 
-    // Create a sample reservation for the user
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(9, 0, 0, 0);
-
-    const tomorrowEnd = new Date(tomorrow);
-    tomorrowEnd.setHours(17, 0, 0, 0);
-
-    const reservation = await prisma.reservation.create({
+    await prisma.subscription.create({
         data: {
             userId: user.id,
-            seatId: 1, // First seat in Creative Hub
-            startTime: tomorrow,
-            endTime: tomorrowEnd,
-            type: 'DAILY',
-            status: 'CONFIRMED',
+            plan: SubscriptionPlan.MONTHLY,
+            status: SubscriptionStatus.ACTIVE,
+            startDate: now,
+            endDate: nextMonth,
         },
     });
-    console.log(`✅ Created sample reservation (ID: ${reservation.id})`);
+    console.log(`✅ Subscription MONTHLY created for Laith`);
+
+    // 6. Création des 10 heures de réservations passées (pour le graphique du Front)
+    for (let i = 0; i < 5; i++) {
+        const startTime = new Date();
+        startTime.setDate(now.getDate() - i);
+        startTime.setHours(10, 0, 0);
+
+        const endTime = new Date(startTime);
+        endTime.setHours(12, 0, 0); // 2 heures par session
+
+        await prisma.reservation.create({
+            data: {
+                userId: user.id,
+                seatId: firstSeat.id, // Correction ici : on utilise l'ID récupéré
+                startTime: startTime,
+                endTime: endTime,
+                type: ReservationType.HOURLY,
+                status: ReservationStatus.CONFIRMED,
+            },
+        });
+    }
+
+    // 7. Notifications
+    await prisma.notification.create({
+        data: {
+            userId: user.id,
+            type: 'CONFIRMATION_RESERVATION',
+            title: 'Bienvenue !',
+            message: 'Votre abonnement Pro est maintenant actif.',
+            isRead: false,
+        },
+    });
 
     console.log('\n🎉 Seed completed successfully!');
-    console.log('\n📋 Test Credentials:');
-    console.log('   User: laith@example.com / Laith1818@');
-    console.log('   Admin: admin@coworkly.com / Admin1818@');
 }
 
 main()

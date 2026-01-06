@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'theme/app_theme.dart';
 import 'providers/app_provider.dart';
+import 'providers/subscription_provider.dart';
 import 'screens/index.dart';
 
 class CoWorklyApp extends StatelessWidget {
@@ -9,8 +10,11 @@ class CoWorklyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => AppProvider(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AppProvider()),
+        ChangeNotifierProvider(create: (_) => SubscriptionProvider()),
+      ],
       child: MaterialApp(
         title: 'CoWorkly',
         theme: AppTheme.lightTheme,

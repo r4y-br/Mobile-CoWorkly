@@ -6,10 +6,15 @@ import roomsRoutes from './src/routes/rooms.js';
 import seatsRoutes from './src/routes/seats.js';
 import reservationsRoutes from './src/routes/reservations.js';
 import notificationsRoutes from './src/routes/notifications.js';
+import subscriptionRoutes from './src/routes/subscriptionRoutes.js';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || 4000; // Utilise le port du .env, sinon 4000 par défaut
+
+app.listen(PORT, () => {
+    console.log(`Server is running on port ::${PORT}`);
+});
 
 // middlewares
 app.use(cors());
@@ -22,7 +27,7 @@ app.use('/rooms', roomsRoutes);
 app.use('/seats', seatsRoutes);
 app.use('/reservations', reservationsRoutes);
 app.use('/notifications', notificationsRoutes);
-
+app.use('/subscriptions', subscriptionRoutes);
 // just a health check endpoint
 app.get('/health', (req, res) => {
     res.status(200).json({ status: 'OK', message: 'Server is running' });
@@ -39,6 +44,3 @@ app.use((err, req, res, next) => {
     res.status(500).json({ message: 'Something went wrong!' });
 });
 
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-});

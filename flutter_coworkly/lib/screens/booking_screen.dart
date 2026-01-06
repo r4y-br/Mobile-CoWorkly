@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_provider.dart';
 import '../services/reservations_api.dart';
+import '../providers/subscription_provider.dart';
 
 class BookingScreen extends StatefulWidget {
   const BookingScreen({Key? key}) : super(key: key);
@@ -292,6 +293,11 @@ class _BookingScreenState extends State<BookingScreen> {
           backgroundColor: Color(0xFF10B981),
         ),
       );
+
+      // Rafraîchir les données d'abonnement après réservation
+      if (token.isNotEmpty) {
+        context.read<SubscriptionProvider>().fetchSubscription(token);
+      }
     } catch (error) {
       if (!mounted) {
         return;

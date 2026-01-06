@@ -1,32 +1,44 @@
 import 'package:flutter/foundation.dart';
 
 class ApiConfig {
-  // Change this to your server's IP address when testing on a physical device
-  // For Android emulator use: 'http://10.0.2.2:4000'
-  // For iOS simulator use: 'http://localhost:4000'
-  // For physical device use your computer's local IP: 'http://192.168.x.x:4000'
-  static const String _serverHost = '192.168.1.106';
+  // 🔧 Configuration des hôtes selon le contexte
+  // - PC (Chrome, Windows, macOS) → localhost
+  // - Android Emulator → 10.0.2.2
+  // - iOS Simulator → localhost
+  // - Appareil physique → IP locale de ton PC (ex: 192.168.1.48)
+
+  static const String _localHost = 'localhost';
+  static const String _androidEmulatorHost = '10.0.2.2';
+  static const String _physicalDeviceHost =
+      '192.168.1.48'; // ⚠️ Mets ici l’IP actuelle de ton PC
   static const int _serverPort = 4000;
 
+  /// Retourne l’URL de base selon la plateforme
   static String get baseUrl {
     if (kIsWeb) {
-      return 'http://$_serverHost:$_serverPort';
+      // Cas Web (Chrome, Edge, etc.)
+      return 'http://$_localHost:$_serverPort';
     }
 
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
-        // Use 10.0.2.2 for Android emulator, or _serverHost for physical device
-        final host = _serverHost == 'localhost' ? '10.0.2.2' : _serverHost;
-        return 'http://$host:$_serverPort';
+        //  Choisis entre émulateur ou appareil physique
+        // Pour l’émulateur Android → 10.0.2.2
+        // Pour un smartphone Android → IP locale de ton PC
+        return 'http://$_androidEmulatorHost:$_serverPort';
       case TargetPlatform.iOS:
       case TargetPlatform.macOS:
       case TargetPlatform.windows:
       case TargetPlatform.linux:
-      case TargetPlatform.fuchsia:
-        return 'http://$_serverHost:$_serverPort';
+        // Ces plateformes peuvent utiliser localhost directement
+        return 'http://$_localHost:$_serverPort';
+      default:
+        // Fallback → appareil physique
+        return 'http://$_physicalDeviceHost:$_serverPort';
     }
   }
 
+  /// Headers par défaut pour les requêtes HTTP
   static Map<String, String> headers({String? token, bool json = true}) {
     final headers = <String, String>{};
     if (json) {
