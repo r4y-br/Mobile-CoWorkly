@@ -1,34 +1,23 @@
 import { prisma } from "../../lib/prisma.js";
-import bcrypt from 'bcryptjs';
 
 // Get all users (Admin only)
 export const getAllUsers = async (req, res) => {
     try {
-        const where = {};
-        
-        // Filter by role
-        if (req.query.role) {
-            where.role = req.query.role;
-        }
-
         const users = await prisma.user.findMany({
-            where,
             orderBy: { createdAt: 'desc' },
             select: {
                 id: true,
                 name: true,
                 email: true,
-                phone: true,
                 role: true,
                 createdAt: true,
-                updatedAt: true,
                 _count: {
                     select: {
                         reservations: true,
                         subscriptions: true,
-                    },
-                },
-            },
+                    }
+                }
+            }
         });
 
         return res.json(users);
@@ -38,39 +27,32 @@ export const getAllUsers = async (req, res) => {
     }
 };
 
-// Get single user (Admin only)
+// Get user by ID (Admin only)
 export const getUserById = async (req, res) => {
     try {
+        const { id } = req.params;
         const user = await prisma.user.findUnique({
-            where: { id: parseInt(req.params.id) },
+            where: { id: parseInt(id) },
             select: {
                 id: true,
                 name: true,
                 email: true,
-                phone: true,
                 role: true,
                 createdAt: true,
-                updatedAt: true,
                 reservations: {
                     orderBy: { createdAt: 'desc' },
                     take: 10,
                     include: {
                         seat: {
-                            include: { room: true },
-                        },
-                    },
+                            include: { room: true }
+                        }
+                    }
                 },
                 subscriptions: {
                     orderBy: { createdAt: 'desc' },
-                },
-                _count: {
-                    select: {
-                        reservations: true,
-                        subscriptions: true,
-                        notifications: true,
-                    },
-                },
-            },
+                    take: 5
+                }
+            }
         });
 
         if (!user) {
@@ -84,153 +66,83 @@ export const getUserById = async (req, res) => {
     }
 };
 
-// Create user (Admin only)
-export const createUser = async (req, res) => {
+// Update user role (Admin only)
+export const updateUserRole = async (req, res) => {
     try {
-        const { name, email, password, phone, role } = req.body;
+        const { id } = req.params;
+        const { role } = req.body;
 
-        if (!name || !email || !password) {
-            return res.status(400).json({ 
-                errors: ['name, email, and password are required'] 
-            });
-        }
-
-        const existingUser = await prisma.user.findUnique({ where: { email } });
-        if (existingUser) {
-            return res.status(400).json({ error: 'Email is already registered' });
-        }
-
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
-
-        const user = await prisma.user.create({
-            data: {
-                name,
-                email,
-                password: hashedPassword,
-                phone,
-                role: role || 'USER',
-            },
-            select: {
-                id: true,
-                name: true,
-                email: true,
-                phone: true,
-                role: true,
-                createdAt: true,
-            },
-        });
-
-        return res.status(201).json(user);
-    } catch (error) {
-        console.error('Error creating user:', error);
-        return res.status(500).json({ error: 'Failed to create user' });
-    }
-};
-
-// Update user (Admin only)
-export const updateUser = async (req, res) => {
-    try {
-        const { name, email, phone, role, password } = req.body;
-        const data = {};
-
-        if (name !== undefined) data.name = name;
-        if (email !== undefined) {
-            // Check if email is already taken by another user
-            const existingUser = await prisma.user.findUnique({ 
-                where: { email } 
-            });
-            if (existingUser && existingUser.id !== parseInt(req.params.id)) {
-                return res.status(400).json({ error: 'Email is already taken' });
-            }
-            data.email = email;
-        }
-        if (phone !== undefined) data.phone = phone;
-        if (role !== undefined) data.role = role;
-        
-        if (password !== undefined && password !== '') {
-            const salt = await bcrypt.genSalt(10);
-            data.password = await bcrypt.hash(password, salt);
+        if (!['USER', 'ADMIN'].includes(role)) {
+            return res.status(400).json({ error: 'Invalid role' });
         }
 
         const user = await prisma.user.update({
-            where: { id: parseInt(req.params.id) },
-            data,
+            where: { id: parseInt(id) },
+            data: { role },
             select: {
                 id: true,
                 name: true,
                 email: true,
-                phone: true,
-                role: true,
-                createdAt: true,
-                updatedAt: true,
-            },
+                role: true
+            }
         });
 
-        return res.json(user);
+        return res.json({ message: 'Role updated successfully', user });
     } catch (error) {
-        console.error('Error updating user:', error);
-        return res.status(500).json({ error: 'Failed to update user' });
+        console.error('Error updating user role:', error);
+        return res.status(500).json({ error: 'Failed to update user role' });
     }
 };
 
 // Delete user (Admin only)
 export const deleteUser = async (req, res) => {
     try {
-        const userId = parseInt(req.params.id);
+        const { id } = req.params;
+        const userId = parseInt(id);
 
-        // Prevent admin from deleting themselves
-        if (userId === req.user.id) {
+        // Don't allow deleting self
+        if (req.user.id === userId) {
             return res.status(400).json({ error: 'Cannot delete your own account' });
         }
 
+        // Delete related data first
+        await prisma.reservation.deleteMany({ where: { userId } });
+        await prisma.subscription.deleteMany({ where: { userId } });
+        
         await prisma.user.delete({
-            where: { id: userId },
+            where: { id: userId }
         });
 
-        return res.status(204).send();
+        return res.json({ message: 'User deleted successfully' });
     } catch (error) {
         console.error('Error deleting user:', error);
         return res.status(500).json({ error: 'Failed to delete user' });
     }
 };
 
-// Get user statistics (Admin only)
-export const getUserStats = async (req, res) => {
+// Cancel reservation (Admin only)
+export const cancelReservation = async (req, res) => {
     try {
-        const totalUsers = await prisma.user.count();
-        const adminUsers = await prisma.user.count({ where: { role: 'ADMIN' } });
-        const regularUsers = await prisma.user.count({ where: { role: 'USER' } });
-
-        const activeSubscriptions = await prisma.subscription.count({
-            where: { status: 'ACTIVE' },
+        const { id } = req.params;
+        
+        const reservation = await prisma.reservation.update({
+            where: { id: parseInt(id) },
+            data: { status: 'CANCELLED' },
+            include: {
+                user: { select: { id: true, name: true, email: true } },
+                seat: { include: { room: true } }
+            }
         });
 
-        const totalReservations = await prisma.reservation.count();
-        const pendingReservations = await prisma.reservation.count({
-            where: { status: 'PENDING' },
-        });
-        const confirmedReservations = await prisma.reservation.count({
-            where: { status: 'CONFIRMED' },
+        // Update seat status
+        await prisma.seat.update({
+            where: { id: reservation.seatId },
+            data: { status: 'AVAILABLE' }
         });
 
-        return res.json({
-            users: {
-                total: totalUsers,
-                admins: adminUsers,
-                regular: regularUsers,
-            },
-            subscriptions: {
-                active: activeSubscriptions,
-            },
-            reservations: {
-                total: totalReservations,
-                pending: pendingReservations,
-                confirmed: confirmedReservations,
-            },
-        });
+        return res.json({ message: 'Reservation cancelled', reservation });
     } catch (error) {
-        console.error('Error fetching user stats:', error);
-        return res.status(500).json({ error: 'Failed to fetch statistics' });
+        console.error('Error cancelling reservation:', error);
+        return res.status(500).json({ error: 'Failed to cancel reservation' });
     }
 };

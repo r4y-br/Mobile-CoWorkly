@@ -69,45 +69,17 @@ class AppProvider extends ChangeNotifier {
 
   Future<void> updateProfile({String? name, String? phone}) async {
     if (_authToken == null) {
-      throw Exception('Non authentifié');
+      throw Exception('Not authenticated');
     }
-
     final response = await _authApi.updateProfile(
       token: _authToken!,
       name: name,
       phone: phone,
     );
-
     final userData = response['user'] as Map<String, dynamic>?;
     if (userData != null) {
       _currentUser = _buildUserFromApi(userData);
       notifyListeners();
-    }
-  }
-
-  Future<void> refreshAuthToken() async {
-    if (_refreshToken == null) {
-      throw Exception('No refresh token available');
-    }
-
-    final response = await _authApi.refreshToken(refreshToken: _refreshToken!);
-    _authToken = response['accessToken'] as String?;
-    _refreshToken = response['refreshToken'] as String?;
-    notifyListeners();
-  }
-
-  Future<void> fetchCurrentUser() async {
-    if (_authToken == null) return;
-
-    try {
-      final response = await _authApi.me(token: _authToken!);
-      final userData = response['user'] as Map<String, dynamic>?;
-      if (userData != null) {
-        _currentUser = _buildUserFromApi(userData);
-        notifyListeners();
-      }
-    } catch (_) {
-      // Token may be expired
     }
   }
 
@@ -144,6 +116,8 @@ class AppProvider extends ChangeNotifier {
       _currentScreen = 'dashboard';
     } else if (tabName == 'subscriptions') {
       _currentScreen = 'subscriptions';
+    } else if (tabName == 'adminSubscriptions') {
+      _currentScreen = 'adminSubscriptions';
     } else if (tabName == 'notifications') {
       _currentScreen = 'notifications';
     } else if (tabName == 'profile') {

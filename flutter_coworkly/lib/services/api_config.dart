@@ -1,29 +1,12 @@
 import 'package:flutter/foundation.dart';
 
 class ApiConfig {
-  // ============================================
-  // PRODUCTION CONFIGURATION
-  // ============================================
-  // For production: Set your production server URL here
-  // Example: 'api.coworkly.com' or your server's public IP
-  //
-  // For development:
-  // - Android emulator: Use '10.0.2.2'
-  // - iOS simulator: Use 'localhost'
-  // - Physical device: Use your computer's local IP (e.g., '192.168.x.x')
-  // ============================================
-
-  // Set to true for production deployment
-  static const bool _isProduction = false;
-
-  // Production server configuration
-  static const String _productionHost = 'api.coworkly.com';
-  static const int _productionPort = 443;
-  static const bool _productionUseHttps = true;
-
-  // Development server configuration
-  static const String _developmentHost = '192.168.81.120';
-  static const int _developmentPort = 4000;
+  // Change this to your server's IP address when testing on a physical device
+  // For Android emulator use: 'http://10.0.2.2:4000'
+  // For iOS simulator use: 'http://localhost:4000'
+  // For physical device use your computer's local IP: 'http://192.168.x.x:4000'
+  static const String _serverHost = 'localhost';
+  static const int _serverPort = 4000;
 
   static String get baseUrl {
     if (_isProduction) {

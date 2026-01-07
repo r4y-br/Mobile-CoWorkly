@@ -56,7 +56,7 @@ class _AuthScreenState extends State<AuthScreen> {
         if (_passwordController.text != _confirmPasswordController.text) {
           setState(() {
             _isSubmitting = false;
-            _submitError = 'Les mots de passe ne correspondent pas.';
+            _submitError = 'Passwords do not match.';
           });
           return;
         }
@@ -78,7 +78,7 @@ class _AuthScreenState extends State<AuthScreen> {
       }
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Connexion réussie! Bienvenue sur CoWorkly!'),
+          content: Text('Login successful! Welcome to CoWorkly!'),
           duration: Duration(seconds: 3),
         ),
       );
@@ -112,7 +112,7 @@ class _AuthScreenState extends State<AuthScreen> {
         children: [
           // Login Page
           _buildAuthPage(
-            title: 'Connectez-vous à votre espace',
+            title: 'Sign in to your space',
             showNameField: false,
             onSubmit: () {
               _handleLogin(appProvider, isSignup: false);
@@ -125,7 +125,7 @@ class _AuthScreenState extends State<AuthScreen> {
           ),
           // Signup Page
           _buildAuthPage(
-            title: 'Créez votre compte',
+            title: 'Create your account',
             showNameField: true,
             onSubmit: () {
               _handleLogin(appProvider, isSignup: true);
@@ -138,7 +138,7 @@ class _AuthScreenState extends State<AuthScreen> {
           ),
           // Forgot Password Page
           _buildAuthPage(
-            title: 'Récupérer votre mot de passe',
+            title: 'Recover your password',
             showNameField: false,
             showPasswordField: false,
             onSubmit: () {},
@@ -225,7 +225,7 @@ class _AuthScreenState extends State<AuthScreen> {
                       TextField(
                         controller: _nameController,
                         decoration: InputDecoration(
-                          labelText: 'Nom complet',
+                          labelText: 'Full name',
                           prefixIcon: const Icon(Icons.person),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -241,7 +241,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         controller: _phoneController,
                         keyboardType: TextInputType.phone,
                         decoration: InputDecoration(
-                          labelText: 'Téléphone',
+                          labelText: 'Phone',
                           prefixIcon: const Icon(Icons.phone),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -274,7 +274,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         controller: _passwordController,
                         obscureText: !_showPassword,
                         decoration: InputDecoration(
-                          labelText: 'Mot de passe',
+                          labelText: 'Password',
                           prefixIcon: const Icon(Icons.lock),
                           suffixIcon: IconButton(
                             icon: Icon(
@@ -300,7 +300,7 @@ class _AuthScreenState extends State<AuthScreen> {
                           controller: _confirmPasswordController,
                           obscureText: !_showConfirmPassword,
                           decoration: InputDecoration(
-                            labelText: 'Confirmer le mot de passe',
+                            labelText: 'Confirm password',
                             prefixIcon: const Icon(Icons.lock_outline),
                             suffixIcon: IconButton(
                               icon: Icon(
@@ -328,7 +328,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         alignment: Alignment.centerRight,
                         child: TextButton(
                           onPressed: () => _pageController.jumpToPage(2),
-                          child: const Text('Mot de passe oublié?'),
+                          child: const Text('Forgot password?'),
                         ),
                       ),
                     const SizedBox(height: 24),
@@ -354,10 +354,10 @@ class _AuthScreenState extends State<AuthScreen> {
                               )
                             : Text(
                                 !showNameField && !showPasswordField
-                                    ? 'Réinitialiser'
+                                    ? 'Reset'
                                     : showNameField
-                                        ? "S'inscrire"
-                                        : 'Se connecter',
+                                        ? 'Sign up'
+                                        : 'Sign in',
                                 style: const TextStyle(color: Colors.white),
                               ),
                       ),
@@ -378,20 +378,20 @@ class _AuthScreenState extends State<AuthScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Text('Pas encore de compte? '),
+                          const Text('No account yet? '),
                           TextButton(
                             onPressed: () => _pageController.nextPage(
                               duration: const Duration(milliseconds: 300),
                               curve: Curves.easeInOut,
                             ),
-                            child: const Text("Créer un compte"),
+                            child: const Text('Create an account'),
                           ),
                         ],
                       ),
                     ],
                     if (showPasswordField && !showNameField) ...[
                       const SizedBox(height: 24),
-                      const Text('Ou continuer avec'),
+                      const Text('Or continue with'),
                       const SizedBox(height: 16),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,

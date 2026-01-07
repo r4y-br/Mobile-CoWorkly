@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_provider.dart';
-import '../services/users_api.dart';
-import '../services/auth_api.dart';
+import 'edit_profile_screen.dart';
+import 'settings_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -263,7 +263,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Membre depuis ${user.memberSince.year}',
+                            'Member since ${user.memberSince.year}',
                             style: TextStyle(
                               color: Colors.white.withOpacity(0.8),
                               fontSize: 14,
@@ -376,10 +376,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 child: Text(
                   appProvider.isAdmin
-                      ? 'Administrateur'
+                      ? 'Administrator'
                       : user.isPremium
-                          ? 'Membre Premium'
-                          : 'Membre Standard',
+                          ? 'Premium Member'
+                          : 'Standard Member',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 12,
@@ -393,7 +393,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
           // Stats - different for admin vs user
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: appProvider.isAdmin ? _buildAdminStats() : _buildUserStats(),
+            child: Row(
+              children: [
+                _buildStatCard(
+                  context,
+                  icon: Icons.calendar_today,
+                  value: '${user.bookings}',
+                  label: 'Bookings',
+                  color: Colors.blue,
+                ),
+                const SizedBox(width: 12),
+                _buildStatCard(
+                  context,
+                  icon: Icons.access_time,
+                  value: '${user.hours}',
+                  label: 'Hours',
+                  color: Colors.purple,
+                ),
+                const SizedBox(width: 12),
+                _buildStatCard(
+                  context,
+                  icon: Icons.trending_up,
+                  value: '€${user.spending.toInt()}',
+                  label: 'Spending',
+                  color: Colors.pink,
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 24),
           // Menu
@@ -407,52 +433,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   child: Column(
                     children: [
-                      // Only show for regular users
-                      if (!appProvider.isAdmin) ...[
-                        _buildMenuItem(
-                          context,
-                          icon: Icons.calendar_today,
-                          label: 'Mes réservations',
-                          color: Colors.blue,
-                          onTap: () => appProvider.setActiveTab('bookings'),
-                        ),
-                        const Divider(height: 1),
-                        _buildMenuItem(
-                          context,
-                          icon: Icons.workspace_premium,
-                          label: 'Mes abonnements',
-                          color: Colors.purple,
-                          onTap: () =>
-                              appProvider.setActiveTab('subscriptions'),
-                        ),
-                        const Divider(height: 1),
-                        _buildMenuItem(
-                          context,
-                          icon: Icons.account_balance_wallet,
-                          label: 'Mon portefeuille',
-                          color: Colors.pink,
-                          onTap: () {},
-                        ),
-                        const Divider(height: 1),
-                      ],
-                      // Admin-specific menu items
-                      if (appProvider.isAdmin) ...[
-                        _buildMenuItem(
-                          context,
-                          icon: Icons.dashboard,
-                          label: 'Tableau de bord',
-                          color: Colors.indigo,
-                          onTap: () => appProvider.setActiveTab('home'),
-                        ),
-                        const Divider(height: 1),
-                      ],
+                      _buildMenuItem(
+                        context,
+                        icon: Icons.calendar_today,
+                        label: 'My bookings',
+                        color: Colors.blue,
+                        onTap: () {},
+                      ),
+                      const Divider(height: 1),
+                      _buildMenuItem(
+                        context,
+                        icon: Icons.workspace_premium,
+                        label: 'My subscriptions',
+                        color: Colors.purple,
+                        onTap: () {},
+                      ),
+                      const Divider(height: 1),
+                      _buildMenuItem(
+                        context,
+                        icon: Icons.account_balance_wallet,
+                        label: 'My wallet',
+                        color: Colors.pink,
+                        onTap: () {},
+                      ),
+                      const Divider(height: 1),
                       _buildMenuItem(
                         context,
                         icon: Icons.person,
-                        label: 'Informations personnelles',
+                        label: 'Personal information',
                         color: Colors.indigo,
-                        onTap: () =>
-                            _showEditProfileDialog(context, appProvider),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const EditProfileScreen(),
+                            ),
+                          );
+                        },
                       ),
                       const Divider(height: 1),
                       _buildMenuItem(
@@ -466,18 +483,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       _buildMenuItem(
                         context,
                         icon: Icons.settings,
-                        label: 'Paramètres',
+                        label: 'Settings',
                         color: Colors.grey,
-                        onTap: () {},
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const SettingsScreen(),
+                            ),
+                          );
+                        },
                       ),
                       const Divider(height: 1),
                       _buildMenuItem(
                         context,
                         icon: Icons.help,
-                        label: 'Centre d\'aide',
+                        label: 'Help center',
                         color: Colors.teal,
                         onTap: () {},
                       ),
+                      if (appProvider.isAdmin) ...[
+                        const Divider(height: 1),
+                        _buildMenuItem(
+                          context,
+                          icon: Icons.admin_panel_settings,
+                          label: 'Admin access',
+                          color: Colors.red,
+                          onTap: () => appProvider.goToAdminPanel(),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -489,7 +523,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: _buildMenuItem(
                     context,
                     icon: Icons.logout,
-                    label: 'Déconnexion',
+                    label: 'Log out',
                     color: Colors.red,
                     onTap: () => appProvider.logout(),
                     isDestructive: true,
@@ -508,14 +542,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            'Conditions d\'utilisation',
+                            'Terms of use',
                             style: TextStyle(color: Colors.grey, fontSize: 12),
                           ),
                           SizedBox(width: 8),
                           Text('•', style: TextStyle(color: Colors.grey)),
                           SizedBox(width: 8),
                           Text(
-                            'Confidentialité',
+                            'Privacy',
                             style: TextStyle(color: Colors.grey, fontSize: 12),
                           ),
                         ],

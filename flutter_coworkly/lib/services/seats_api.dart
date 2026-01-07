@@ -9,8 +9,8 @@ class SeatsApi {
 
   final http.Client _client;
 
-  Future<List<Map<String, dynamic>>> fetchSeats(
-      {required String roomId}) async {
+  // Get all seats for a room (public)
+  Future<List<Map<String, dynamic>>> fetchSeats({required String roomId}) async {
     final uri = Uri.parse('${ApiConfig.baseUrl}/seats?roomId=$roomId');
     final response = await _client.get(uri);
 
@@ -22,62 +22,59 @@ class SeatsApi {
       throw Exception('Unexpected response format');
     }
 
-    throw Exception(_extractErrorMessage(response));
+    throw _buildError(response);
   }
 
-  Future<Map<String, dynamic>> fetchSeatById({required int id}) async {
-    final uri = Uri.parse('${ApiConfig.baseUrl}/seats/$id');
+  // Get seat by ID (public)
+  Future<Map<String, dynamic>> fetchSeatById(String seatId) async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}/seats/$seatId');
     final response = await _client.get(uri);
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return jsonDecode(response.body) as Map<String, dynamic>;
     }
 
-    throw Exception(_extractErrorMessage(response));
+    throw _buildError(response);
   }
 
+  // Create seat (admin)
   Future<Map<String, dynamic>> createSeat({
     required String token,
-    required int roomId,
+    required String roomId,
     required int number,
     String? status,
-    double? positionX,
-    double? positionY,
   }) async {
     final uri = Uri.parse('${ApiConfig.baseUrl}/seats');
+    final body = <String, dynamic>{
+      'roomId': int.tryParse(roomId) ?? roomId,
+      'number': number,
+    };
+    if (status != null) body['status'] = status;
+
     final response = await _client.post(
       uri,
       headers: ApiConfig.headers(token: token),
-      body: jsonEncode({
-        'roomId': roomId,
-        'number': number,
-        if (status != null) 'status': status,
-        if (positionX != null) 'positionX': positionX,
-        if (positionY != null) 'positionY': positionY,
-      }),
+      body: jsonEncode(body),
     );
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return jsonDecode(response.body) as Map<String, dynamic>;
     }
 
-    throw Exception(_extractErrorMessage(response));
+    throw _buildError(response);
   }
 
+  // Update seat (admin)
   Future<Map<String, dynamic>> updateSeat({
     required String token,
-    required int id,
+    required String seatId,
     int? number,
     String? status,
-    double? positionX,
-    double? positionY,
   }) async {
-    final uri = Uri.parse('${ApiConfig.baseUrl}/seats/$id');
+    final uri = Uri.parse('${ApiConfig.baseUrl}/seats/$seatId');
     final body = <String, dynamic>{};
     if (number != null) body['number'] = number;
     if (status != null) body['status'] = status;
-    if (positionX != null) body['positionX'] = positionX;
-    if (positionY != null) body['positionY'] = positionY;
 
     final response = await _client.patch(
       uri,
@@ -89,25 +86,26 @@ class SeatsApi {
       return jsonDecode(response.body) as Map<String, dynamic>;
     }
 
-    throw Exception(_extractErrorMessage(response));
+    throw _buildError(response);
   }
 
+  // Delete seat (admin)
   Future<void> deleteSeat({
     required String token,
-    required int id,
+    required String seatId,
   }) async {
-    final uri = Uri.parse('${ApiConfig.baseUrl}/seats/$id');
+    final uri = Uri.parse('${ApiConfig.baseUrl}/seats/$seatId');
     final response = await _client.delete(
       uri,
       headers: ApiConfig.headers(token: token, json: false),
     );
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception(_extractErrorMessage(response));
+      throw _buildError(response);
     }
   }
 
-  String _extractErrorMessage(http.Response response) {
+  Exception _buildError(http.Response response) {
     var message = 'Request failed (${response.statusCode})';
     try {
       final decoded = jsonDecode(response.body);
@@ -120,8 +118,11 @@ class SeatsApi {
           message = decoded['message'] as String;
         }
       }
-    } catch (_) {}
-    return message;
+    } catch (_) {
+      // Ignore parse errors and keep the default message.
+    }
+
+    return Exception(message);
   }
 
   void dispose() {

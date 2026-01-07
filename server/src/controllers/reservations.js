@@ -87,6 +87,29 @@ export const getAllReservations = async (req, res) => {
     }
 };
 
+// Get all reservations with user info (Admin only)
+export const getAllReservationsAdmin = async (req, res) => {
+    try {
+        const reservations = await prisma.reservation.findMany({
+            orderBy: { createdAt: 'desc' },
+            take: 50,
+            include: {
+                user: {
+                    select: { id: true, name: true, email: true },
+                },
+                seat: {
+                    include: { room: true },
+                },
+            },
+        });
+
+        return res.json(reservations);
+    } catch (error) {
+        console.error('Error fetching all reservations:', error);
+        return res.status(500).json({ error: 'Failed to fetch reservations' });
+    }
+};
+
 // Create reservation
 export const createReservation = async (req, res) => {
     try {

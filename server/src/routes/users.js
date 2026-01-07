@@ -1,35 +1,25 @@
-import { Router } from 'express';
-import { authenticate, authorize } from '../middlewares/auth.js';
-import {
-    getAllUsers,
-    getUserById,
-    createUser,
-    updateUser,
+import express from 'express';
+import { 
+    getAllUsers, 
+    getUserById, 
+    updateUserRole, 
     deleteUser,
-    getUserStats
+    cancelReservation 
 } from '../controllers/users.js';
+import { requireAuth, requireAdmin } from '../middlewares/auth.js';
 
-const router = Router();
+const router = express.Router();
 
-// All routes require admin authentication
-router.use(authenticate, authorize('ADMIN'));
+// All routes require admin
+router.use(requireAuth, requireAdmin);
 
-// Get user statistics
-router.get('/stats', getUserStats);
-
-// Get all users
+// User management
 router.get('/', getAllUsers);
-
-// Get single user
 router.get('/:id', getUserById);
-
-// Create user
-router.post('/', createUser);
-
-// Update user
-router.patch('/:id', updateUser);
-
-// Delete user
+router.patch('/:id/role', updateUserRole);
 router.delete('/:id', deleteUser);
+
+// Reservation management
+router.patch('/reservations/:id/cancel', cancelReservation);
 
 export default router;
