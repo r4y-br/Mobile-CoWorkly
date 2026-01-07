@@ -119,6 +119,26 @@ Get current user profile.
 }
 ```
 
+### Get Profile Stats
+**GET** `/auth/me/stats`
+🔒 *Protected*
+
+Get current user statistics (reservations count, total hours, total spending).
+
+**Response:** `200 OK`
+```json
+{
+  "reservations": 5,
+  "hours": 24,
+  "spending": 120.00
+}
+```
+
+**Notes:**
+- `reservations`: Total count of confirmed/pending reservations
+- `hours`: Total hours from all reservations
+- `spending`: Total spending (5€/hour for HOURLY, 25€/day for DAILY)
+
 ### Update Profile
 **PUT** `/auth/profile`
 🔒 *Protected*
@@ -203,23 +223,6 @@ Get detailed information about a specific room.
 }
 ```
 
-### Create Room
-**POST** `/rooms`
-🔒 *Admin Only*
-
-Create a new room.
-
-**Request Body:**
-```json
-{
-  "name": "New Room",
-  "description": "Room description",
-  "capacity": 20
-}
-```
-
-**Response:** `201 Created`
-
 ### Update Room
 **PATCH** `/rooms/:id`
 🔒 *Admin Only*
@@ -235,14 +238,6 @@ Update room information.
 ```
 
 **Response:** `200 OK`
-
-### Delete Room
-**DELETE** `/rooms/:id`
-🔒 *Admin Only*
-
-Delete a room.
-
-**Response:** `204 No Content`
 
 ---
 
@@ -277,25 +272,6 @@ Get specific seat information.
 
 **Response:** `200 OK`
 
-### Create Seat
-**POST** `/seats`
-🔒 *Admin Only*
-
-Create a new seat.
-
-**Request Body:**
-```json
-{
-  "roomId": 1,
-  "number": 17,
-  "status": "AVAILABLE",
-  "positionX": 0.5,
-  "positionY": 0.5
-}
-```
-
-**Response:** `201 Created`
-
 ### Update Seat
 **PATCH** `/seats/:id`
 🔒 *Admin Only*
@@ -310,14 +286,6 @@ Update seat information.
 ```
 
 **Response:** `200 OK`
-
-### Delete Seat
-**DELETE** `/seats/:id`
-🔒 *Admin Only*
-
-Delete a seat.
-
-**Response:** `204 No Content`
 
 ---
 
@@ -548,7 +516,7 @@ Delete a specific notification.
 **Response:** `204 No Content`
 
 ### Delete All Notifications
-**DELETE** `/notifications/all`
+**DELETE** `/notifications`
 🔒 *Protected*
 
 Delete all user notifications.
