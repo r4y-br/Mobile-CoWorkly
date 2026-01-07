@@ -61,30 +61,6 @@ export const getRoomById = async (req, res) => {
     }
 };
 
-// Create room (Admin only)
-export const createRoom = async (req, res) => {
-    try {
-        const { name, description, capacity } = req.body;
-
-        if (!name || !capacity) {
-            return res.status(400).json({ errors: ['name and capacity are required'] });
-        }
-
-        const room = await prisma.room.create({
-            data: {
-                name,
-                description: description || '',
-                capacity: parseInt(capacity),
-            },
-        });
-
-        return res.status(201).json(room);
-    } catch (error) {
-        console.error('Error creating room:', error);
-        return res.status(500).json({ error: 'Failed to create room' });
-    }
-};
-
 // Update room (Admin only)
 export const updateRoom = async (req, res) => {
     try {
@@ -105,16 +81,5 @@ export const updateRoom = async (req, res) => {
     } catch (error) {
         console.error('Error updating room:', error);
         return res.status(500).json({ error: 'Failed to update room' });
-    }
-};
-
-// Delete room (Admin only)
-export const deleteRoom = async (req, res) => {
-    try {
-        await prisma.room.delete({ where: { id: parseInt(req.params.id) } });
-        return res.status(204).send();
-    } catch (error) {
-        console.error('Error deleting room:', error);
-        return res.status(500).json({ error: 'Failed to delete room' });
     }
 };

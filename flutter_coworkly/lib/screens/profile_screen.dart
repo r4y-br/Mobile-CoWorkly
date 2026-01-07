@@ -1,9 +1,198 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_provider.dart';
+import '../services/users_api.dart';
+import '../services/auth_api.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  final UsersApi _usersApi = UsersApi();
+  final AuthApi _authApi = AuthApi();
+  Map<String, dynamic> _adminStats = {};
+  Map<String, dynamic> _userStats = {};
+  bool _isLoadingStats = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadStats();
+  }
+
+  @override
+  void dispose() {
+    _usersApi.dispose();
+    _authApi.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadStats() async {
+    final appProvider = Provider.of<AppProvider>(context, listen: false);
+    final token = appProvider.authToken;
+    if (token == null) return;
+
+    setState(() => _isLoadingStats = true);
+    try {
+      if (appProvider.isAdmin) {
+        final stats = await _usersApi.fetchUserStats(token: token);
+        setState(() {
+          _adminStats = stats;
+          _isLoadingStats = false;
+        });
+      } else {
+        final stats = await _authApi.getProfileStats(token: token);
+        setState(() {
+          _userStats = stats;
+          _isLoadingStats = false;
+        });
+      }
+    } catch (e) {
+      setState(() => _isLoadingStats = false);
+    }
+  }
+
+  void _showEditProfileDialog(BuildContext context, AppProvider appProvider) {
+    final user = appProvider.currentUser;
+    if (user == null) return;
+
+    final nameController = TextEditingController(text: user.name);
+    final phoneController = TextEditingController(text: user.phone);
+    bool isSubmitting = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) => Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(ctx).viewInsets.bottom,
+          ),
+          child: Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+            ),
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  'Modifier le profil',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                TextField(
+                  controller: nameController,
+                  decoration: InputDecoration(
+                    labelText: 'Nom complet',
+                    prefixIcon: const Icon(Icons.person),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: phoneController,
+                  keyboardType: TextInputType.phone,
+                  decoration: InputDecoration(
+                    labelText: 'Téléphone',
+                    prefixIcon: const Icon(Icons.phone),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: isSubmitting
+                        ? null
+                        : () async {
+                            setModalState(() => isSubmitting = true);
+                            try {
+                              await appProvider.updateProfile(
+                                name: nameController.text.isNotEmpty
+                                    ? nameController.text
+                                    : null,
+                                phone: phoneController.text.isNotEmpty
+                                    ? phoneController.text
+                                    : null,
+                              );
+                              if (ctx.mounted) {
+                                Navigator.pop(ctx);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Profil mis à jour!'),
+                                    backgroundColor: Color(0xFF10B981),
+                                  ),
+                                );
+                              }
+                            } catch (e) {
+                              if (ctx.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(e
+                                        .toString()
+                                        .replaceFirst('Exception: ', '')),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
+                            } finally {
+                              setModalState(() => isSubmitting = false);
+                            }
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF6366F1),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: isSubmitting
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text('Enregistrer'),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -201,36 +390,10 @@ class ProfileScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 24),
-          // Stats
+          // Stats - different for admin vs user
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Row(
-              children: [
-                _buildStatCard(
-                  context,
-                  icon: Icons.calendar_today,
-                  value: '${user.bookings}',
-                  label: 'Réservations',
-                  color: Colors.blue,
-                ),
-                const SizedBox(width: 12),
-                _buildStatCard(
-                  context,
-                  icon: Icons.access_time,
-                  value: '${user.hours}',
-                  label: 'Heures',
-                  color: Colors.purple,
-                ),
-                const SizedBox(width: 12),
-                _buildStatCard(
-                  context,
-                  icon: Icons.trending_up,
-                  value: '€${user.spending.toInt()}',
-                  label: 'Dépenses',
-                  color: Colors.pink,
-                ),
-              ],
-            ),
+            child: appProvider.isAdmin ? _buildAdminStats() : _buildUserStats(),
           ),
           const SizedBox(height: 24),
           // Menu
@@ -244,36 +407,52 @@ class ProfileScreen extends StatelessWidget {
                   ),
                   child: Column(
                     children: [
-                      _buildMenuItem(
-                        context,
-                        icon: Icons.calendar_today,
-                        label: 'Mes réservations',
-                        color: Colors.blue,
-                        onTap: () {},
-                      ),
-                      const Divider(height: 1),
-                      _buildMenuItem(
-                        context,
-                        icon: Icons.workspace_premium,
-                        label: 'Mes abonnements',
-                        color: Colors.purple,
-                        onTap: () {},
-                      ),
-                      const Divider(height: 1),
-                      _buildMenuItem(
-                        context,
-                        icon: Icons.account_balance_wallet,
-                        label: 'Mon portefeuille',
-                        color: Colors.pink,
-                        onTap: () {},
-                      ),
-                      const Divider(height: 1),
+                      // Only show for regular users
+                      if (!appProvider.isAdmin) ...[
+                        _buildMenuItem(
+                          context,
+                          icon: Icons.calendar_today,
+                          label: 'Mes réservations',
+                          color: Colors.blue,
+                          onTap: () => appProvider.setActiveTab('bookings'),
+                        ),
+                        const Divider(height: 1),
+                        _buildMenuItem(
+                          context,
+                          icon: Icons.workspace_premium,
+                          label: 'Mes abonnements',
+                          color: Colors.purple,
+                          onTap: () =>
+                              appProvider.setActiveTab('subscriptions'),
+                        ),
+                        const Divider(height: 1),
+                        _buildMenuItem(
+                          context,
+                          icon: Icons.account_balance_wallet,
+                          label: 'Mon portefeuille',
+                          color: Colors.pink,
+                          onTap: () {},
+                        ),
+                        const Divider(height: 1),
+                      ],
+                      // Admin-specific menu items
+                      if (appProvider.isAdmin) ...[
+                        _buildMenuItem(
+                          context,
+                          icon: Icons.dashboard,
+                          label: 'Tableau de bord',
+                          color: Colors.indigo,
+                          onTap: () => appProvider.setActiveTab('home'),
+                        ),
+                        const Divider(height: 1),
+                      ],
                       _buildMenuItem(
                         context,
                         icon: Icons.person,
                         label: 'Informations personnelles',
                         color: Colors.indigo,
-                        onTap: () {},
+                        onTap: () =>
+                            _showEditProfileDialog(context, appProvider),
                       ),
                       const Divider(height: 1),
                       _buildMenuItem(
@@ -281,7 +460,7 @@ class ProfileScreen extends StatelessWidget {
                         icon: Icons.notifications,
                         label: 'Notifications',
                         color: Colors.orange,
-                        onTap: () {},
+                        onTap: () => appProvider.setActiveTab('notifications'),
                       ),
                       const Divider(height: 1),
                       _buildMenuItem(
@@ -299,16 +478,6 @@ class ProfileScreen extends StatelessWidget {
                         color: Colors.teal,
                         onTap: () {},
                       ),
-                      if (appProvider.isAdmin) ...[
-                        const Divider(height: 1),
-                        _buildMenuItem(
-                          context,
-                          icon: Icons.admin_panel_settings,
-                          label: 'Accès administration',
-                          color: Colors.red,
-                          onTap: () => appProvider.goToAdminPanel(),
-                        ),
-                      ],
                     ],
                   ),
                 ),
@@ -360,6 +529,92 @@ class ProfileScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildAdminStats() {
+    if (_isLoadingStats) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(16.0),
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    final totalUsers = _adminStats['users']?['total'] ?? 0;
+    final totalReservations = _adminStats['reservations']?['total'] ?? 0;
+    final activeSubscriptions = _adminStats['subscriptions']?['active'] ?? 0;
+
+    return Row(
+      children: [
+        _buildStatCard(
+          context,
+          icon: Icons.people,
+          value: '$totalUsers',
+          label: 'Utilisateurs',
+          color: Colors.blue,
+        ),
+        const SizedBox(width: 12),
+        _buildStatCard(
+          context,
+          icon: Icons.calendar_today,
+          value: '$totalReservations',
+          label: 'Réservations',
+          color: Colors.purple,
+        ),
+        const SizedBox(width: 12),
+        _buildStatCard(
+          context,
+          icon: Icons.workspace_premium,
+          value: '$activeSubscriptions',
+          label: 'Abonnements',
+          color: Colors.green,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildUserStats() {
+    if (_isLoadingStats) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(16.0),
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    final reservations = _userStats['reservations'] ?? 0;
+    final hours = _userStats['hours'] ?? 0;
+    final spending = _userStats['spending'] ?? 0.0;
+
+    return Row(
+      children: [
+        _buildStatCard(
+          context,
+          icon: Icons.calendar_today,
+          value: '$reservations',
+          label: 'Réservations',
+          color: Colors.blue,
+        ),
+        const SizedBox(width: 12),
+        _buildStatCard(
+          context,
+          icon: Icons.access_time,
+          value: '$hours',
+          label: 'Heures',
+          color: Colors.purple,
+        ),
+        const SizedBox(width: 12),
+        _buildStatCard(
+          context,
+          icon: Icons.trending_up,
+          value: '€${spending is int ? spending : (spending as num).toInt()}',
+          label: 'Dépenses',
+          color: Colors.pink,
+        ),
+      ],
     );
   }
 

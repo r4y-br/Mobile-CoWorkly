@@ -58,6 +58,77 @@ class AuthApi {
     return _handleResponse(response);
   }
 
+  Future<Map<String, dynamic>> getProfileStats({required String token}) async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}/auth/me/stats');
+    final response = await _client.get(
+      uri,
+      headers: ApiConfig.headers(token: token, json: false),
+    );
+
+    return _handleResponse(response);
+  }
+
+  Future<Map<String, dynamic>> updateProfile({
+    required String token,
+    String? name,
+    String? phone,
+  }) async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}/auth/profile');
+    final body = <String, dynamic>{};
+    if (name != null) body['name'] = name;
+    if (phone != null) body['phone'] = phone;
+
+    final response = await _client.put(
+      uri,
+      headers: ApiConfig.headers(token: token),
+      body: jsonEncode(body),
+    );
+
+    return _handleResponse(response);
+  }
+
+  Future<Map<String, dynamic>> refreshToken({
+    required String refreshToken,
+  }) async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}/auth/refresh');
+    final response = await _client.post(
+      uri,
+      headers: ApiConfig.headers(),
+      body: jsonEncode({'refreshToken': refreshToken}),
+    );
+
+    return _handleResponse(response);
+  }
+
+  Future<void> logout({required String token}) async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}/auth/logout');
+    final response = await _client.post(
+      uri,
+      headers: ApiConfig.headers(token: token),
+    );
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception(_extractErrorMessage(response));
+    }
+  }
+
+  String _extractErrorMessage(http.Response response) {
+    var message = 'Request failed (${response.statusCode})';
+    try {
+      final decoded = jsonDecode(response.body);
+      if (decoded is Map<String, dynamic>) {
+        if (decoded['errors'] is List) {
+          message = (decoded['errors'] as List).join(', ');
+        } else if (decoded['error'] is String) {
+          message = decoded['error'] as String;
+        } else if (decoded['message'] is String) {
+          message = decoded['message'] as String;
+        }
+      }
+    } catch (_) {}
+    return message;
+  }
+
   Map<String, dynamic> _handleResponse(http.Response response) {
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return jsonDecode(response.body) as Map<String, dynamic>;

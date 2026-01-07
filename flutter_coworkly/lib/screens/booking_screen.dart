@@ -300,19 +300,6 @@ class _BookingScreenState extends State<BookingScreen> {
     }
   }
 
-  int _estimateHours() {
-    switch (bookingType) {
-      case 'hourly':
-        return duration;
-      case 'daily':
-        return duration * 8;
-      case 'weekly':
-        return duration * 40;
-      default:
-        return duration;
-    }
-  }
-
   String _formatDate(DateTime date) {
     final year = date.year.toString().padLeft(4, '0');
     final month = date.month.toString().padLeft(2, '0');
@@ -619,9 +606,8 @@ class _BookingScreenState extends State<BookingScreen> {
                         vertical: 12,
                       ),
                       decoration: BoxDecoration(
-                        color: isSelected
-                            ? const Color(0xFF6366F1)
-                            : Colors.white,
+                        color:
+                            isSelected ? const Color(0xFF6366F1) : Colors.white,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
                           color: isSelected

@@ -95,6 +95,8 @@ class BottomNav extends StatelessWidget {
 
   List<Widget> _buildAdminNavItems(
       BuildContext context, AppProvider appProvider, String activeTab) {
+    // Admin only needs Dashboard, Notifications and Profile
+    // Reservations and Subscriptions are already in the admin dashboard tabs
     return [
       _buildNavItem(
         context,
@@ -104,15 +106,6 @@ class BottomNav extends StatelessWidget {
         label: 'Dashboard',
         isActive: activeTab == 'home',
         onTap: () => appProvider.setActiveTab('home'),
-      ),
-      _buildNavItem(
-        context,
-        id: 'bookings',
-        icon: Icons.calendar_today_outlined,
-        activeIcon: Icons.calendar_today,
-        label: 'Réservations',
-        isActive: activeTab == 'bookings',
-        onTap: () => appProvider.setActiveTab('bookings'),
       ),
       _buildNavItem(
         context,

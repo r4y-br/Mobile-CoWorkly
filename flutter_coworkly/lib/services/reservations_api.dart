@@ -76,6 +76,51 @@ class ReservationsApi {
     }
   }
 
+  Future<void> deleteReservation({
+    required String token,
+    required String id,
+  }) async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}/reservations/$id');
+    final response = await _client.delete(
+      uri,
+      headers: ApiConfig.headers(token: token, json: false),
+    );
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw _buildError(response);
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> fetchAllReservations({
+    required String token,
+    int? seatId,
+    int? userId,
+  }) async {
+    final queryParams = <String, String>{};
+    if (seatId != null) queryParams['seatId'] = seatId.toString();
+    if (userId != null) queryParams['userId'] = userId.toString();
+
+    var uri = Uri.parse('${ApiConfig.baseUrl}/reservations');
+    if (queryParams.isNotEmpty) {
+      uri = uri.replace(queryParameters: queryParams);
+    }
+
+    final response = await _client.get(
+      uri,
+      headers: ApiConfig.headers(token: token, json: false),
+    );
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final decoded = jsonDecode(response.body);
+      if (decoded is List) {
+        return decoded.cast<Map<String, dynamic>>();
+      }
+      throw Exception('Unexpected response format');
+    }
+
+    throw _buildError(response);
+  }
+
   Exception _buildError(http.Response response) {
     var message = 'Request failed (${response.statusCode})';
     try {

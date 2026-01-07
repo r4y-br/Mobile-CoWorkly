@@ -22,6 +22,92 @@ class SeatsApi {
       throw Exception('Unexpected response format');
     }
 
+    throw Exception(_extractErrorMessage(response));
+  }
+
+  Future<Map<String, dynamic>> fetchSeatById({required int id}) async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}/seats/$id');
+    final response = await _client.get(uri);
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    }
+
+    throw Exception(_extractErrorMessage(response));
+  }
+
+  Future<Map<String, dynamic>> createSeat({
+    required String token,
+    required int roomId,
+    required int number,
+    String? status,
+    double? positionX,
+    double? positionY,
+  }) async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}/seats');
+    final response = await _client.post(
+      uri,
+      headers: ApiConfig.headers(token: token),
+      body: jsonEncode({
+        'roomId': roomId,
+        'number': number,
+        if (status != null) 'status': status,
+        if (positionX != null) 'positionX': positionX,
+        if (positionY != null) 'positionY': positionY,
+      }),
+    );
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    }
+
+    throw Exception(_extractErrorMessage(response));
+  }
+
+  Future<Map<String, dynamic>> updateSeat({
+    required String token,
+    required int id,
+    int? number,
+    String? status,
+    double? positionX,
+    double? positionY,
+  }) async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}/seats/$id');
+    final body = <String, dynamic>{};
+    if (number != null) body['number'] = number;
+    if (status != null) body['status'] = status;
+    if (positionX != null) body['positionX'] = positionX;
+    if (positionY != null) body['positionY'] = positionY;
+
+    final response = await _client.patch(
+      uri,
+      headers: ApiConfig.headers(token: token),
+      body: jsonEncode(body),
+    );
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    }
+
+    throw Exception(_extractErrorMessage(response));
+  }
+
+  Future<void> deleteSeat({
+    required String token,
+    required int id,
+  }) async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}/seats/$id');
+    final response = await _client.delete(
+      uri,
+      headers: ApiConfig.headers(token: token, json: false),
+    );
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception(_extractErrorMessage(response));
+    }
+  }
+
+  String _extractErrorMessage(http.Response response) {
     var message = 'Request failed (${response.statusCode})';
     try {
       final decoded = jsonDecode(response.body);
@@ -34,11 +120,8 @@ class SeatsApi {
           message = decoded['message'] as String;
         }
       }
-    } catch (_) {
-      // Ignore parse errors and keep the default message.
-    }
-
-    throw Exception(message);
+    } catch (_) {}
+    return message;
   }
 
   void dispose() {

@@ -6,6 +6,7 @@ class AppProvider extends ChangeNotifier {
   final AuthApi _authApi = AuthApi();
   bool _isLoggedIn = false;
   String? _authToken;
+  String? _refreshToken;
   User? _currentUser;
   String _currentScreen = 'home';
   String _activeTab = 'home';
@@ -16,6 +17,7 @@ class AppProvider extends ChangeNotifier {
 
   bool get isLoggedIn => _isLoggedIn;
   String? get authToken => _authToken;
+  String? get refreshToken => _refreshToken;
   User? get currentUser => _currentUser;
   String get currentScreen => _currentScreen;
   String get activeTab => _activeTab;
@@ -27,7 +29,9 @@ class AppProvider extends ChangeNotifier {
 
   Future<void> login(String email, String password) async {
     final response = await _authApi.login(email: email, password: password);
-    _authToken = response['token'] as String?;
+    _authToken =
+        response['token'] as String? ?? response['accessToken'] as String?;
+    _refreshToken = response['refreshToken'] as String?;
     final userData = response['user'] as Map<String, dynamic>?;
     if (userData != null) {
       _currentUser = _buildUserFromApi(userData);
@@ -48,7 +52,9 @@ class AppProvider extends ChangeNotifier {
       name: name,
       phone: phone,
     );
-    _authToken = response['token'] as String?;
+    _authToken =
+        response['token'] as String? ?? response['accessToken'] as String?;
+    _refreshToken = response['refreshToken'] as String?;
     final userData = response['user'] as Map<String, dynamic>?;
     if (userData != null) {
       _currentUser = _buildUserFromApi(userData);
@@ -61,9 +67,59 @@ class AppProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> updateProfile({String? name, String? phone}) async {
+    if (_authToken == null) {
+      throw Exception('Non authentifié');
+    }
+
+    final response = await _authApi.updateProfile(
+      token: _authToken!,
+      name: name,
+      phone: phone,
+    );
+
+    final userData = response['user'] as Map<String, dynamic>?;
+    if (userData != null) {
+      _currentUser = _buildUserFromApi(userData);
+      notifyListeners();
+    }
+  }
+
+  Future<void> refreshAuthToken() async {
+    if (_refreshToken == null) {
+      throw Exception('No refresh token available');
+    }
+
+    final response = await _authApi.refreshToken(refreshToken: _refreshToken!);
+    _authToken = response['accessToken'] as String?;
+    _refreshToken = response['refreshToken'] as String?;
+    notifyListeners();
+  }
+
+  Future<void> fetchCurrentUser() async {
+    if (_authToken == null) return;
+
+    try {
+      final response = await _authApi.me(token: _authToken!);
+      final userData = response['user'] as Map<String, dynamic>?;
+      if (userData != null) {
+        _currentUser = _buildUserFromApi(userData);
+        notifyListeners();
+      }
+    } catch (_) {
+      // Token may be expired
+    }
+  }
+
   void logout() {
+    // Call API logout if needed (fire and forget)
+    if (_authToken != null) {
+      _authApi.logout(token: _authToken!).catchError((_) {});
+    }
+
     _isLoggedIn = false;
     _authToken = null;
+    _refreshToken = null;
     _currentUser = null;
     _currentScreen = 'home';
     _activeTab = 'home';
@@ -118,7 +174,8 @@ class AppProvider extends ChangeNotifier {
   }
 
   void goToHome() {
-    _currentScreen = 'home';
+    // Admin goes to admin screen, users go to home
+    _currentScreen = isAdmin ? 'admin' : 'home';
     _activeTab = 'home';
     notifyListeners();
   }

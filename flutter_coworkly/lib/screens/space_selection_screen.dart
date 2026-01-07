@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/app_provider.dart';
 import '../services/rooms_api.dart';
 
 class SpaceSelectionScreen extends StatefulWidget {
@@ -86,25 +88,40 @@ class _SpaceSelectionScreenState extends State<SpaceSelectionScreen> {
                 ),
               ),
               Positioned(
-                top: 60,
-                left: 24,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
-                    Text(
-                      'Nos Espaces',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                      ),
+                top: 50,
+                left: 16,
+                right: 16,
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back, color: Colors.white),
+                      onPressed: () {
+                        Provider.of<AppProvider>(context, listen: false)
+                            .goToHome();
+                      },
                     ),
-                    SizedBox(height: 8),
-                    Text(
-                      'Sélectionnez un espace de coworking',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Nos Espaces',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'Sélectionnez un espace de coworking',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -171,11 +188,9 @@ class _SpaceSelectionScreenState extends State<SpaceSelectionScreen> {
                           setState(() {
                             selectedRoomId = space['id'];
                           });
-                          Navigator.pushNamed(
-                            context,
-                            '/room-visualization',
-                            arguments: space['id'],
-                          );
+                          // Use provider navigation
+                          Provider.of<AppProvider>(context, listen: false)
+                              .selectRoom(space['id'], space['name']);
                         },
                         child: Container(
                           margin: const EdgeInsets.only(bottom: 16),

@@ -36,35 +36,6 @@ export const getSeatById = async (req, res) => {
     }
 };
 
-// Create seat (Admin only)
-export const createSeat = async (req, res) => {
-    try {
-        const { roomId, number, status } = req.body;
-
-        if (!roomId || number === undefined) {
-            return res.status(400).json({ errors: ['roomId and number are required'] });
-        }
-
-        const room = await prisma.room.findUnique({ where: { id: parseInt(roomId) } });
-        if (!room) {
-            return res.status(400).json({ errors: ['roomId is invalid'] });
-        }
-
-        const seat = await prisma.seat.create({
-            data: {
-                roomId: parseInt(roomId),
-                number: parseInt(number),
-                status: status || 'AVAILABLE',
-            },
-        });
-
-        return res.status(201).json(seat);
-    } catch (error) {
-        console.error('Error creating seat:', error);
-        return res.status(500).json({ error: 'Failed to create seat' });
-    }
-};
-
 // Update seat (Admin only)
 export const updateSeat = async (req, res) => {
     try {
@@ -83,16 +54,5 @@ export const updateSeat = async (req, res) => {
     } catch (error) {
         console.error('Error updating seat:', error);
         return res.status(500).json({ error: 'Failed to update seat' });
-    }
-};
-
-// Delete seat (Admin only)
-export const deleteSeat = async (req, res) => {
-    try {
-        await prisma.seat.delete({ where: { id: parseInt(req.params.id) } });
-        return res.status(204).send();
-    } catch (error) {
-        console.error('Error deleting seat:', error);
-        return res.status(500).json({ error: 'Failed to delete seat' });
     }
 };

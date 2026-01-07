@@ -236,3 +236,62 @@ export const updateProfile = async (req, res) => {
         return res.status(500).json({ message: "Internal server error." });
     }
 };
+// Get user profile stats (reservations count, total hours, total spending)
+export const getProfileStats = async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        // Get all confirmed reservations for the user
+        const reservations = await prisma.reservation.findMany({
+            where: {
+                userId,
+                status: { in: ['CONFIRMED', 'PENDING'] }
+            },
+            select: {
+                startTime: true,
+                endTime: true,
+                type: true
+            }
+        });
+
+        // Calculate total reservations count
+        const totalReservations = reservations.length;
+
+        // Calculate total hours
+        let totalHours = 0;
+        reservations.forEach(reservation => {
+            const start = new Date(reservation.startTime);
+            const end = new Date(reservation.endTime);
+            const diffMs = end - start;
+            const diffHours = diffMs / (1000 * 60 * 60);
+            totalHours += diffHours;
+        });
+
+        // Calculate total spending (simplified pricing)
+        // HOURLY: 5€/hour, DAILY: 25€/day (8 hours)
+        let totalSpending = 0;
+        reservations.forEach(reservation => {
+            const start = new Date(reservation.startTime);
+            const end = new Date(reservation.endTime);
+            const diffMs = end - start;
+            const diffHours = diffMs / (1000 * 60 * 60);
+            
+            if (reservation.type === 'HOURLY') {
+                totalSpending += diffHours * 5; // 5€ per hour
+            } else if (reservation.type === 'DAILY') {
+                const days = Math.ceil(diffHours / 24);
+                totalSpending += days * 25; // 25€ per day
+            }
+        });
+
+        return res.status(200).json({
+            reservations: totalReservations,
+            hours: Math.round(totalHours),
+            spending: Math.round(totalSpending * 100) / 100
+        });
+
+    } catch (error) {
+        console.error("Error fetching profile stats:", error);
+        return res.status(500).json({ message: "Internal server error." });
+    }
+};

@@ -22,8 +22,8 @@ router.patch('/read-all', markAllAsRead);
 // Mark single notification as read
 router.patch('/:id/read', markAsRead);
 
-// Delete all notifications (must be handled with specific endpoint or query param)
-router.delete('/all', deleteAllNotifications);
+// Delete all notifications (root path)
+router.delete('/', deleteAllNotifications);
 
 // Delete single notification
 router.delete('/:id', deleteNotification);

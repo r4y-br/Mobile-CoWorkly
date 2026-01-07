@@ -38,6 +38,22 @@ async function updateSeatStatus(seatId) {
     });
 }
 
+// Helper: Check if user has valid active subscription
+async function checkUserSubscription(userId) {
+    const now = new Date();
+    
+    const subscription = await prisma.subscription.findFirst({
+        where: {
+            userId,
+            status: 'ACTIVE',
+            startDate: { lte: now },
+            endDate: { gte: now },
+        },
+    });
+
+    return subscription;
+}
+
 // Get reservations
 export const getAllReservations = async (req, res) => {
     try {
@@ -80,6 +96,14 @@ export const createReservation = async (req, res) => {
             return res.status(400).json({ errors: ['seatId is required'] });
         }
 
+        // Check if user has an active subscription
+        const subscription = await checkUserSubscription(req.user.id);
+        if (!subscription) {
+            return res.status(403).json({ 
+                error: 'Vous devez avoir un abonnement actif pour effectuer une réservation. Souscrivez à un abonnement depuis la page Abonnements.' 
+            });
+        }
+
         // Handle both formats: direct DateTime or date + time strings
         let parsedStartTime, parsedEndTime;
         
@@ -101,6 +125,14 @@ export const createReservation = async (req, res) => {
 
         if (parsedStartTime >= parsedEndTime) {
             return res.status(400).json({ errors: ['endTime must be after startTime'] });
+        }
+
+        // Validate reservation is within subscription period
+        if (parsedStartTime < subscription.startDate || parsedEndTime > subscription.endDate) {
+            const endDateFormatted = subscription.endDate.toLocaleDateString('fr-FR');
+            return res.status(403).json({ 
+                error: `Votre réservation doit être dans la période de votre abonnement (jusqu'au ${endDateFormatted}).` 
+            });
         }
 
         const seat = await prisma.seat.findUnique({ where: { id: parseInt(seatId) } });

@@ -36,7 +36,7 @@ async function main() {
     });
     console.log(`✅ Created admin: ${admin.email} (ID: ${admin.id})`);
 
-    // Create Rooms (Spaces)
+    // Create Rooms (5 fixed rooms for the coworking space)
     const rooms = await Promise.all([
         prisma.room.upsert({
             where: { id: 1 },
@@ -45,7 +45,7 @@ async function main() {
                 id: 1,
                 name: 'Creative Hub',
                 description: 'Un espace créatif et inspirant pour les designers et artistes. Lumineux avec vue sur le jardin.',
-                capacity: 16,
+                capacity: 20,
                 isAvailable: true,
             },
         }),
@@ -67,7 +67,7 @@ async function main() {
                 id: 3,
                 name: 'Work Lounge',
                 description: 'Espace confortable et détendu pour le travail collaboratif. Canapés et tables basses.',
-                capacity: 12,
+                capacity: 20,
                 isAvailable: true,
             },
         }),
@@ -78,58 +78,37 @@ async function main() {
                 id: 4,
                 name: 'Meeting Room',
                 description: 'Salle de réunion professionnelle avec écran et visioconférence.',
-                capacity: 8,
+                capacity: 20,
+                isAvailable: true,
+            },
+        }),
+        prisma.room.upsert({
+            where: { id: 5 },
+            update: {},
+            create: {
+                id: 5,
+                name: 'Quiet Zone',
+                description: 'Espace silencieux pour le travail concentré. Idéal pour la productivité.',
+                capacity: 20,
                 isAvailable: true,
             },
         }),
     ]);
     console.log(`✅ Created ${rooms.length} rooms`);
 
-    // Create Seats for each room
+    // Create 20 Seats for each of the 5 rooms (5x4 grid layout)
     const seatsData = [];
     
-    // Creative Hub - 16 seats (4x4 grid)
-    for (let i = 1; i <= 16; i++) {
-        seatsData.push({
-            roomId: 1,
-            number: i,
-            positionX: ((i - 1) % 4) * 0.2 + 0.2,
-            positionY: Math.floor((i - 1) / 4) * 0.2 + 0.2,
-            status: i <= 12 ? 'AVAILABLE' : (i === 13 ? 'RESERVED' : 'AVAILABLE'),
-        });
-    }
-
-    // Tech Space - 20 seats (4x5 grid)
-    for (let i = 1; i <= 20; i++) {
-        seatsData.push({
-            roomId: 2,
-            number: i,
-            positionX: ((i - 1) % 4) * 0.2 + 0.2,
-            positionY: Math.floor((i - 1) / 4) * 0.2 + 0.15,
-            status: i <= 15 ? 'AVAILABLE' : (i === 16 ? 'OCCUPIED' : 'AVAILABLE'),
-        });
-    }
-
-    // Work Lounge - 12 seats (3x4 grid)
-    for (let i = 1; i <= 12; i++) {
-        seatsData.push({
-            roomId: 3,
-            number: i,
-            positionX: ((i - 1) % 3) * 0.25 + 0.2,
-            positionY: Math.floor((i - 1) / 3) * 0.2 + 0.2,
-            status: 'AVAILABLE',
-        });
-    }
-
-    // Meeting Room - 8 seats (2x4 grid)
-    for (let i = 1; i <= 8; i++) {
-        seatsData.push({
-            roomId: 4,
-            number: i,
-            positionX: ((i - 1) % 2) * 0.3 + 0.35,
-            positionY: Math.floor((i - 1) / 2) * 0.2 + 0.2,
-            status: 'AVAILABLE',
-        });
+    for (let roomId = 1; roomId <= 5; roomId++) {
+        for (let i = 1; i <= 20; i++) {
+            seatsData.push({
+                roomId: roomId,
+                number: i,
+                positionX: ((i - 1) % 5) * 0.18 + 0.1,
+                positionY: Math.floor((i - 1) / 5) * 0.22 + 0.1,
+                status: 'AVAILABLE',
+            });
+        }
     }
 
     // Delete existing seats and recreate

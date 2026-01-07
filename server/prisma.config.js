@@ -4,7 +4,10 @@ import { defineConfig } from "prisma/config";
 
 export default defineConfig({
   schema: "prisma/schema.prisma",
-  migrations: { path: "prisma/migrations" },
+  migrations: { 
+    path: "prisma/migrations",
+    seed: "node prisma/seed.js",
+  },
   datasource: {
     url: "postgres://092217ef3a85104fb1d3a6b0b33e523beb082967052d03b73ce4647103313c7d:sk_HJG9ncTQjOlIoZjnAsI0f@db.prisma.io:5432/postgres?sslmode=require",
   },
