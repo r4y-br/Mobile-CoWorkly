@@ -6,8 +6,7 @@ import roomsRoutes from './src/routes/rooms.js';
 import seatsRoutes from './src/routes/seats.js';
 import reservationsRoutes from './src/routes/reservations.js';
 import notificationsRoutes from './src/routes/notifications.js';
-import statsRoutes from './src/routes/stats.js';
-import subscriptionRoutes from './src/routes/subscriptionRoutes.js';
+import subscriptionsRoutes from './src/routes/subscriptions.js';
 import usersRoutes from './src/routes/users.js';
 dotenv.config();
 
@@ -25,8 +24,7 @@ app.use('/rooms', roomsRoutes);
 app.use('/seats', seatsRoutes);
 app.use('/reservations', reservationsRoutes);
 app.use('/notifications', notificationsRoutes);
-app.use('/stats', statsRoutes);
-app.use('/subscriptions', subscriptionRoutes);
+app.use('/subscriptions', subscriptionsRoutes);
 app.use('/users', usersRoutes);
 
 // just a health check endpoint

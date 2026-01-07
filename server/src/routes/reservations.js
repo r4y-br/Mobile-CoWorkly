@@ -2,7 +2,6 @@ import { Router } from 'express';
 import { authenticate, authorize } from '../middlewares/auth.js';
 import {
     getAllReservations,
-    getAllReservationsAdmin,
     createReservation,
     cancelReservation,
     deleteReservation
@@ -12,9 +11,6 @@ const router = Router();
 
 // Get reservations (users see their own, admins can see all)
 router.get('/', authenticate, getAllReservations);
-
-// Get all reservations with user info (Admin only)
-router.get('/all', authenticate, authorize('ADMIN'), getAllReservationsAdmin);
 
 // Create reservation
 router.post('/', authenticate, createReservation);

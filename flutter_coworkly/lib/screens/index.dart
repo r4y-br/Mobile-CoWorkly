@@ -9,6 +9,3 @@ export 'subscriptions_screen.dart';
 export 'notifications_screen.dart';
 export 'profile_screen.dart';
 export 'admin_screen.dart';
-export 'edit_profile_screen.dart';
-export 'settings_screen.dart';
-export 'admin/index.dart';

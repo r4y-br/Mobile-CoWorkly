@@ -61,7 +61,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (token == null) {
       setState(() {
         _isLoading = false;
-        _error = 'Not authenticated';
+        _error = 'Non authentifié';
       });
       return;
     }
@@ -163,7 +163,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildHeader(BuildContext context, User? user) {
-    final userName = user?.name ?? 'User';
+    final userName = user?.name ?? 'Utilisateur';
     final isPremium = user?.isPremium ?? false;
     final initials = userName
         .split(' ')
@@ -257,7 +257,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          isPremium ? 'Pro Member' : 'Member',
+                          isPremium ? 'Membre Pro' : 'Membre',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 12,
@@ -272,16 +272,34 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ],
           ),
           const SizedBox(height: 24),
-          Row(
-            children: [
-              _buildQuickStat('${user?.hours ?? 0}', 'Total Hours'),
-              const SizedBox(width: 12),
-              _buildQuickStat(
-                  '${user?.spending.toStringAsFixed(0) ?? 0}€', 'Spent'),
-              const SizedBox(width: 12),
-              _buildQuickStat('${user?.bookings ?? 0}', 'Bookings'),
-            ],
-          ),
+          _isLoadingStats
+              ? Row(
+                  children: [
+                    _buildQuickStat('...', 'Heures totales'),
+                    const SizedBox(width: 12),
+                    _buildQuickStat('...', 'Dépensé'),
+                    const SizedBox(width: 12),
+                    _buildQuickStat('...', 'Réservations'),
+                  ],
+                )
+              : Row(
+                  children: [
+                    _buildQuickStat(
+                      '${_userStats['hours'] ?? 0}',
+                      'Heures totales',
+                    ),
+                    const SizedBox(width: 12),
+                    _buildQuickStat(
+                      '${(_userStats['spending'] ?? 0).toInt()}€',
+                      'Dépensé',
+                    ),
+                    const SizedBox(width: 12),
+                    _buildQuickStat(
+                      '${_userStats['reservations'] ?? 0}',
+                      'Réservations',
+                    ),
+                  ],
+                ),
         ],
       ),
     );
@@ -317,312 +335,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildMonthlyActivityChart(BuildContext context) {
-    final data = [
-      {'month': 'Jul', 'hours': 8},
-      {'month': 'Aug', 'hours': 15},
-      {'month': 'Sep', 'hours': 22},
-      {'month': 'Oct', 'hours': 28},
-      {'month': 'Nov', 'hours': 24},
-    ];
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Monthly Activity',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    'Coworking hours',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[500],
-                    ),
-                  ),
-                ],
-              ),
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF6366F1).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.trending_up,
-                  color: Color(0xFF6366F1),
-                  size: 20,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          SizedBox(
-            height: 180,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: data.map((item) {
-                final height = (item['hours'] as int) / 30 * 150;
-                return Column(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Container(
-                      width: 30,
-                      height: height,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [Color(0xFF6366F1), Color(0xFF3B82F6)],
-                        ),
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(8),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      item['month'] as String,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[500],
-                      ),
-                    ),
-                  ],
-                );
-              }).toList(),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSpaceDistribution(BuildContext context) {
-    final data = [
-      {'name': 'Creative Hub', 'value': 45, 'color': const Color(0xFF4A90E2)},
-      {'name': 'Tech Space', 'value': 30, 'color': const Color(0xFF43D89D)},
-      {'name': 'Work & Lounge', 'value': 25, 'color': const Color(0xFFFFD86B)},
-    ];
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Espaces favoris',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 24),
-          Row(
-            children: [
-              SizedBox(
-                width: 120,
-                height: 120,
-                child: CustomPaint(
-                  painter: PieChartPainter(
-                    data.map((e) => e['value'] as int).toList(),
-                    data.map((e) => e['color'] as Color).toList(),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 24),
-              Expanded(
-                child: Column(
-                  children: data.map((item) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                width: 12,
-                                height: 12,
-                                decoration: BoxDecoration(
-                                  color: item['color'] as Color,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                item['name'] as String,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                            ],
-                          ),
-                          Text(
-                            '${item['value']}%',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAchievements(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            const Color(0xFF10B981).withOpacity(0.1),
-            const Color(0xFF10B981).withOpacity(0.05),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Recent Achievements',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 16),
-          _buildAchievementItem(
-            icon: Icons.emoji_events,
-            title: 'Consistency',
-            subtitle: '12 consecutive days of coworking',
-            color: const Color(0xFF10B981),
-            isNew: true,
-          ),
-          const SizedBox(height: 12),
-          _buildAchievementItem(
-            icon: Icons.trending_up,
-            title: 'Productive',
-            subtitle: '100 hours of coworking reached',
-            color: const Color(0xFF6366F1),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAchievementItem({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required Color color,
-    bool isNew = false,
-  }) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(icon, color: Colors.white, size: 24),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-              ),
-              Text(
-                subtitle,
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 12,
-                ),
-              ),
-            ],
-          ),
-        ),
-        if (isNew)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: const Color(0xFF10B981),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Text(
-              'New',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-      ],
     );
   }
 
@@ -662,7 +374,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
         child: Center(
           child: Text(
-            'Error: $_error',
+            'Erreur: $_error',
             style: TextStyle(color: Colors.red[600]),
           ),
         ),
@@ -688,11 +400,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
-                'My Bookings',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+                'Mes réservations',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               TextButton(
                 onPressed: _loadReservations,
@@ -700,7 +409,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   children: [
                     Icon(Icons.refresh, size: 16),
                     SizedBox(width: 4),
-                    Text('Refresh'),
+                    Text('Actualiser'),
                   ],
                 ),
               ),
@@ -719,7 +428,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'No bookings',
+                    'Aucune réservation',
                     style: TextStyle(color: Colors.grey[600]),
                   ),
                 ],
@@ -731,44 +440,37 @@ class _DashboardScreenState extends State<DashboardScreen> {
               final seat = booking['seat'] as Map<String, dynamic>?;
               final room = seat?['room'] as Map<String, dynamic>?;
               final spaceName = room?['name'] ?? 'Salle inconnue';
-              final seatNumber = seat?['number']?.toString() ?? seat?['label'] ?? '';
-              final startTime = booking['startTime'] ?? '';
-              final endTime = booking['endTime'] ?? '';
-              final status = (booking['status'] ?? 'PENDING').toString().toUpperCase();
+              final seatNumber = seat?['number']?.toString() ?? '';
+              final startTimeIso = booking['startTime']?.toString();
+              final endTimeIso = booking['endTime']?.toString();
+              final start =
+                  startTimeIso != null ? DateTime.tryParse(startTimeIso) : null;
+              final end =
+                  endTimeIso != null ? DateTime.tryParse(endTimeIso) : null;
+              final status =
+                  (booking['status'] as String?)?.toUpperCase() ?? 'PENDING';
 
               String statusLabel;
               Color statusColor;
               bool canCancel = false;
               switch (status) {
                 case 'CONFIRMED':
-                  statusLabel = 'Confirmed';
+                  statusLabel = 'Confirmé';
                   statusColor = const Color(0xFF10B981);
                   canCancel = true;
                   break;
                 case 'CANCELLED':
-                  statusLabel = 'Cancelled';
+                  statusLabel = 'Annulé';
                   statusColor = Colors.red;
                   break;
                 case 'COMPLETED':
-                  statusLabel = 'Completed';
+                  statusLabel = 'Terminé';
                   statusColor = Colors.grey;
                   break;
                 default:
-                  statusLabel = 'Pending';
+                  statusLabel = 'En attente';
                   statusColor = Colors.orange;
                   canCancel = true;
-              }
-
-              // Format date
-              String formattedDate = '';
-              String formattedTime = '';
-              try {
-                final start = DateTime.parse(startTime);
-                final end = DateTime.parse(endTime);
-                formattedDate = '${start.day}/${start.month}/${start.year}';
-                formattedTime = '${start.hour}:${start.minute.toString().padLeft(2, '0')} - ${end.hour}:${end.minute.toString().padLeft(2, '0')}';
-              } catch (e) {
-                formattedDate = startTime;
               }
 
               return Padding(
@@ -784,35 +486,65 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     children: [
                       Row(
                         children: [
-                          Text(
-                            '$spaceName - Seat $seatNumber',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF6366F1).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(
+                              Icons.event_seat,
+                              color: Color(0xFF6366F1),
+                              size: 20,
                             ),
                           ),
-                          const SizedBox(height: 2),
-                          Row(
-                            children: [
-                              Icon(Icons.calendar_today,
-                                  size: 12, color: Colors.grey[500]),
-                              const SizedBox(width: 4),
-                              Text(
-                                formattedDate,
-                                style: TextStyle(
-                                  color: Colors.grey[500],
-                                  fontSize: 12,
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '$spaceName - Siège $seatNumber',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 8),
-                              Icon(Icons.access_time,
-                                  size: 12, color: Colors.grey[500]),
-                              const SizedBox(width: 4),
-                              Text(
-                                formattedTime,
-                                style: TextStyle(
-                                  color: Colors.grey[500],
-                                  fontSize: 12,
+                                const SizedBox(height: 2),
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.calendar_today,
+                                      size: 12,
+                                      color: Colors.grey[500],
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      start != null
+                                          ? '${start.year}-${start.month.toString().padLeft(2, '0')}-${start.day.toString().padLeft(2, '0')}'
+                                          : '',
+                                      style: TextStyle(
+                                        color: Colors.grey[500],
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Icon(
+                                      Icons.access_time,
+                                      size: 12,
+                                      color: Colors.grey[500],
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      start != null && end != null
+                                          ? '${start.hour.toString().padLeft(2, '0')}:${start.minute.toString().padLeft(2, '0')} - ${end.hour.toString().padLeft(2, '0')}:${end.minute.toString().padLeft(2, '0')}'
+                                          : '',
+                                      style: TextStyle(
+                                        color: Colors.grey[500],
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
@@ -835,24 +567,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ),
                         ],
                       ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: statusColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        statusLabel,
-                        style: TextStyle(
-                          color: statusColor,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
+                      if (canCancel) ...[
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            TextButton.icon(
+                              onPressed: () =>
+                                  _cancelReservation(reservationId),
+                              icon: const Icon(Icons.cancel_outlined, size: 16),
+                              label: const Text('Annuler'),
+                              style: TextButton.styleFrom(
+                                foregroundColor: Colors.red,
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 12),
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ),
-                  ],
+                      ],
+                    ],
+                  ),
                 ),
               );
             }),
@@ -879,22 +614,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Monthly Goal',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            'Objectif mensuel',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Coworking hours',
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 14,
-                ),
+                'Heures de coworking',
+                style: TextStyle(color: Colors.grey[600], fontSize: 14),
               ),
               const Text(
                 '24 / 40h',
@@ -916,11 +645,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Only 16 more hours to reach your goal!',
-            style: TextStyle(
-              color: Colors.grey[500],
-              fontSize: 12,
-            ),
+            'Plus que 16 heures pour atteindre votre objectif !',
+            style: TextStyle(color: Colors.grey[500], fontSize: 12),
           ),
         ],
       ),

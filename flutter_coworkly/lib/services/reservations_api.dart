@@ -29,34 +29,6 @@ class ReservationsApi {
     throw _buildError(response);
   }
 
-  Future<List<Map<String, dynamic>>> fetchAllReservations({
-    required String token,
-  }) async {
-    final uri = Uri.parse('${ApiConfig.baseUrl}/reservations/all');
-    print('Fetching all reservations from: $uri');
-    final response = await _client.get(
-      uri,
-      headers: ApiConfig.headers(token: token, json: false),
-    );
-
-    print('Response status: ${response.statusCode}');
-    print('Response body: ${response.body}');
-    
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      final decoded = jsonDecode(response.body);
-      if (decoded is List) {
-        return decoded.cast<Map<String, dynamic>>();
-      }
-      // If it's an object with reservations key
-      if (decoded is Map && decoded['reservations'] is List) {
-        return (decoded['reservations'] as List).cast<Map<String, dynamic>>();
-      }
-      return [];
-    }
-
-    throw _buildError(response);
-  }
-
   Future<Map<String, dynamic>> createReservation({
     required String token,
     required String seatId,

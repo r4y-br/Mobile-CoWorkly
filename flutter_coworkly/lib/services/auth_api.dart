@@ -36,28 +36,30 @@ class AuthApi {
     required String password,
   }) async {
     final uri = Uri.parse('${ApiConfig.baseUrl}/auth/login');
-    print('🔐 Login attempt to: $uri');
-    print('📧 Email: $email');
-    try {
-      final response = await _client.post(
-        uri,
-        headers: ApiConfig.headers(),
-        body: jsonEncode({
-          'email': email,
-          'password': password,
-        }),
-      );
-      print('📨 Response status: ${response.statusCode}');
-      print('📝 Response body: ${response.body}');
-      return _handleResponse(response);
-    } catch (e) {
-      print('❌ Login error: $e');
-      rethrow;
-    }
+    final response = await _client.post(
+      uri,
+      headers: ApiConfig.headers(),
+      body: jsonEncode({
+        'email': email,
+        'password': password,
+      }),
+    );
+
+    return _handleResponse(response);
   }
 
   Future<Map<String, dynamic>> me({required String token}) async {
     final uri = Uri.parse('${ApiConfig.baseUrl}/auth/me');
+    final response = await _client.get(
+      uri,
+      headers: ApiConfig.headers(token: token, json: false),
+    );
+
+    return _handleResponse(response);
+  }
+
+  Future<Map<String, dynamic>> getProfileStats({required String token}) async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}/auth/me/stats');
     final response = await _client.get(
       uri,
       headers: ApiConfig.headers(token: token, json: false),
@@ -83,6 +85,48 @@ class AuthApi {
     );
 
     return _handleResponse(response);
+  }
+
+  Future<Map<String, dynamic>> refreshToken({
+    required String refreshToken,
+  }) async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}/auth/refresh');
+    final response = await _client.post(
+      uri,
+      headers: ApiConfig.headers(),
+      body: jsonEncode({'refreshToken': refreshToken}),
+    );
+
+    return _handleResponse(response);
+  }
+
+  Future<void> logout({required String token}) async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}/auth/logout');
+    final response = await _client.post(
+      uri,
+      headers: ApiConfig.headers(token: token),
+    );
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception(_extractErrorMessage(response));
+    }
+  }
+
+  String _extractErrorMessage(http.Response response) {
+    var message = 'Request failed (${response.statusCode})';
+    try {
+      final decoded = jsonDecode(response.body);
+      if (decoded is Map<String, dynamic>) {
+        if (decoded['errors'] is List) {
+          message = (decoded['errors'] as List).join(', ');
+        } else if (decoded['error'] is String) {
+          message = decoded['error'] as String;
+        } else if (decoded['message'] is String) {
+          message = decoded['message'] as String;
+        }
+      }
+    } catch (_) {}
+    return message;
   }
 
   Map<String, dynamic> _handleResponse(http.Response response) {

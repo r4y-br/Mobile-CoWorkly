@@ -15,9 +15,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final CoWorkingInfo coWorkingInfo = CoWorkingInfo(
     name: 'CoWorkly',
-    tagline: 'Your collaborative workspace in the heart of the city',
+    tagline: 'Votre espace de travail collaboratif au cœur de la ville',
     description:
-        'A modern and inspiring environment designed for nomadic professionals and creative teams.',
+        'Un environnement moderne et inspirant conçu pour les professionnels nomades et les équipes créatives.',
     address: '15 Rue de Rivoli, 75001 Paris',
     phone: '+33 1 42 36 52 78',
     email: 'contact@coworkly.fr',
@@ -31,18 +31,18 @@ class _HomeScreenState extends State<HomeScreen> {
     availableSeats: 32,
     occupancyRate: 60,
     amenities: [
-      Amenity(icon: 'wifi', label: 'High-speed WiFi'),
-      Amenity(icon: 'coffee', label: 'Free coffee & tea'),
-      Amenity(icon: 'car', label: 'Secure parking'),
-      Amenity(icon: 'meeting', label: 'Meeting rooms'),
+      Amenity(icon: 'wifi', label: 'WiFi haute vitesse'),
+      Amenity(icon: 'coffee', label: 'Café & thé gratuit'),
+      Amenity(icon: 'car', label: 'Stationnement sécurisé'),
+      Amenity(icon: 'meeting', label: 'Salles de réunion'),
     ],
     features: [
-      'Personal lockers',
-      'Equipped kitchen',
-      'Relaxation area',
-      'Printer & scanner',
-      '24/7 access with subscription',
-      'Networking events',
+      'Casiers personnels',
+      'Cuisine équipée',
+      'Espace détente',
+      'Imprimante & scanner',
+      'Accès 24/7 avec abonnement',
+      'Événements networking',
     ],
   );
 
@@ -175,7 +175,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'Real-time availability',
+                                    'Disponibilité en temps réel',
                                     style: Theme.of(
                                       context,
                                     ).textTheme.bodySmall,
@@ -231,7 +231,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Occupancy rate: ${occupancyPercentage}%',
+                            'Taux d\'occupation: $occupancyPercentage%',
                             style: Theme.of(context).textTheme.bodySmall,
                             textAlign: TextAlign.center,
                           ),
@@ -250,7 +250,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         listen: false,
                       ).goToSpaceSelection(),
                       icon: const Icon(Icons.visibility),
-                      label: const Text('View seats'),
+                      label: const Text('Voir les places'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF6366F1),
                         shape: RoundedRectangleBorder(
@@ -285,7 +285,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'About',
+                                  'À propos',
                                   style: Theme.of(
                                     context,
                                   ).textTheme.headlineSmall,
@@ -328,7 +328,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                               const SizedBox(width: 12),
                               Text(
-                                'Opening Hours',
+                                'Horaires d\'ouverture',
                                 style: Theme.of(
                                   context,
                                 ).textTheme.headlineSmall,
@@ -340,7 +340,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                'Monday - Friday',
+                                'Lundi - Vendredi',
                                 style: Theme.of(context).textTheme.bodySmall,
                               ),
                               Text(
@@ -357,7 +357,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                'Saturday - Sunday',
+                                'Samedi - Dimanche',
                                 style: Theme.of(context).textTheme.bodySmall,
                               ),
                               Text(
@@ -380,7 +380,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Equipment & Services',
+                            'Équipements & Services',
                             style: Theme.of(context).textTheme.headlineSmall,
                           ),
                           const SizedBox(height: 16),
@@ -436,7 +436,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                'Included Benefits',
+                                'Avantages inclus',
                                 style: Theme.of(
                                   context,
                                 ).textTheme.headlineSmall,
@@ -485,8 +485,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                               child: Text(
                                 _showAllFeatures
-                                    ? 'Show less'
-                                    : 'Show ${coWorkingInfo.features.length - 4} more',
+                                    ? 'Voir moins'
+                                    : 'Voir ${coWorkingInfo.features.length - 4} plus',
                               ),
                             ),
                         ],
