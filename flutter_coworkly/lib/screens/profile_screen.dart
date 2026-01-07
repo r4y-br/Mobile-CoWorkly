@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_provider.dart';
+import 'edit_profile_screen.dart';
+import 'settings_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -74,7 +76,7 @@ class ProfileScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Membre depuis ${user.memberSince.year}',
+                            'Member since ${user.memberSince.year}',
                             style: TextStyle(
                               color: Colors.white.withOpacity(0.8),
                               fontSize: 14,
@@ -187,10 +189,10 @@ class ProfileScreen extends StatelessWidget {
                 ),
                 child: Text(
                   appProvider.isAdmin
-                      ? 'Administrateur'
+                      ? 'Administrator'
                       : user.isPremium
-                          ? 'Membre Premium'
-                          : 'Membre Standard',
+                          ? 'Premium Member'
+                          : 'Standard Member',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 12,
@@ -210,7 +212,7 @@ class ProfileScreen extends StatelessWidget {
                   context,
                   icon: Icons.calendar_today,
                   value: '${user.bookings}',
-                  label: 'Réservations',
+                  label: 'Bookings',
                   color: Colors.blue,
                 ),
                 const SizedBox(width: 12),
@@ -218,7 +220,7 @@ class ProfileScreen extends StatelessWidget {
                   context,
                   icon: Icons.access_time,
                   value: '${user.hours}',
-                  label: 'Heures',
+                  label: 'Hours',
                   color: Colors.purple,
                 ),
                 const SizedBox(width: 12),
@@ -226,7 +228,7 @@ class ProfileScreen extends StatelessWidget {
                   context,
                   icon: Icons.trending_up,
                   value: '€${user.spending.toInt()}',
-                  label: 'Dépenses',
+                  label: 'Spending',
                   color: Colors.pink,
                 ),
               ],
@@ -247,7 +249,7 @@ class ProfileScreen extends StatelessWidget {
                       _buildMenuItem(
                         context,
                         icon: Icons.calendar_today,
-                        label: 'Mes réservations',
+                        label: 'My bookings',
                         color: Colors.blue,
                         onTap: () {},
                       ),
@@ -255,7 +257,7 @@ class ProfileScreen extends StatelessWidget {
                       _buildMenuItem(
                         context,
                         icon: Icons.workspace_premium,
-                        label: 'Mes abonnements',
+                        label: 'My subscriptions',
                         color: Colors.purple,
                         onTap: () {},
                       ),
@@ -263,7 +265,7 @@ class ProfileScreen extends StatelessWidget {
                       _buildMenuItem(
                         context,
                         icon: Icons.account_balance_wallet,
-                        label: 'Mon portefeuille',
+                        label: 'My wallet',
                         color: Colors.pink,
                         onTap: () {},
                       ),
@@ -271,9 +273,16 @@ class ProfileScreen extends StatelessWidget {
                       _buildMenuItem(
                         context,
                         icon: Icons.person,
-                        label: 'Informations personnelles',
+                        label: 'Personal information',
                         color: Colors.indigo,
-                        onTap: () {},
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const EditProfileScreen(),
+                            ),
+                          );
+                        },
                       ),
                       const Divider(height: 1),
                       _buildMenuItem(
@@ -287,15 +296,22 @@ class ProfileScreen extends StatelessWidget {
                       _buildMenuItem(
                         context,
                         icon: Icons.settings,
-                        label: 'Paramètres',
+                        label: 'Settings',
                         color: Colors.grey,
-                        onTap: () {},
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const SettingsScreen(),
+                            ),
+                          );
+                        },
                       ),
                       const Divider(height: 1),
                       _buildMenuItem(
                         context,
                         icon: Icons.help,
-                        label: 'Centre d\'aide',
+                        label: 'Help center',
                         color: Colors.teal,
                         onTap: () {},
                       ),
@@ -304,7 +320,7 @@ class ProfileScreen extends StatelessWidget {
                         _buildMenuItem(
                           context,
                           icon: Icons.admin_panel_settings,
-                          label: 'Accès administration',
+                          label: 'Admin access',
                           color: Colors.red,
                           onTap: () => appProvider.goToAdminPanel(),
                         ),
@@ -320,7 +336,7 @@ class ProfileScreen extends StatelessWidget {
                   child: _buildMenuItem(
                     context,
                     icon: Icons.logout,
-                    label: 'Déconnexion',
+                    label: 'Log out',
                     color: Colors.red,
                     onTap: () => appProvider.logout(),
                     isDestructive: true,
@@ -339,14 +355,14 @@ class ProfileScreen extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            'Conditions d\'utilisation',
+                            'Terms of use',
                             style: TextStyle(color: Colors.grey, fontSize: 12),
                           ),
                           SizedBox(width: 8),
                           Text('•', style: TextStyle(color: Colors.grey)),
                           SizedBox(width: 8),
                           Text(
-                            'Confidentialité',
+                            'Privacy',
                             style: TextStyle(color: Colors.grey, fontSize: 12),
                           ),
                         ],

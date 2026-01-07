@@ -155,7 +155,7 @@ class _SpaceSelectionScreenState extends State<SpaceSelectionScreen> {
             Icon(Icons.cloud_off, size: 48, color: Colors.grey[500]),
             const SizedBox(height: 16),
             Text(
-              _loadError ?? 'Erreur lors du chargement des espaces.',
+              _loadError ?? 'Error loading spaces.',
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.grey[700]),
             ),
@@ -169,7 +169,7 @@ class _SpaceSelectionScreenState extends State<SpaceSelectionScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: const Text('Réessayer'),
+              child: const Text('Retry'),
             ),
           ],
         ),
@@ -187,7 +187,7 @@ class _SpaceSelectionScreenState extends State<SpaceSelectionScreen> {
             Icon(Icons.meeting_room, size: 48, color: Colors.grey[500]),
             const SizedBox(height: 16),
             Text(
-              'Aucun espace disponible pour le moment.',
+              'No spaces available at the moment.',
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.grey[700]),
             ),
@@ -201,7 +201,7 @@ class _SpaceSelectionScreenState extends State<SpaceSelectionScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: const Text('Actualiser'),
+              child: const Text('Refresh'),
             ),
           ],
         ),
@@ -240,7 +240,7 @@ class _SpaceSelectionScreenState extends State<SpaceSelectionScreen> {
                 ),
                 const SizedBox(height: 16),
                 const Text(
-                  'Choisissez votre espace',
+                  'Choose your space',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 24,
@@ -249,7 +249,7 @@ class _SpaceSelectionScreenState extends State<SpaceSelectionScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Sélectionnez l\'espace adapté à vos besoins',
+                  'Select the space that fits your needs',
                   style: TextStyle(
                     color: Colors.white.withOpacity(0.9),
                     fontSize: 14,
@@ -390,7 +390,7 @@ class _SpaceSelectionScreenState extends State<SpaceSelectionScreen> {
                                                   ),
                                                   const SizedBox(width: 8),
                                                   Text(
-                                                    '$availableSeats places libres',
+                                                    '$availableSeats seats available',
                                                     style: const TextStyle(
                                                       fontSize: 12,
                                                       fontWeight:
@@ -480,7 +480,7 @@ class _SpaceSelectionScreenState extends State<SpaceSelectionScreen> {
                                                       .spaceBetween,
                                               children: [
                                                 Text(
-                                                  'Occupation',
+                                                  'Occupancy',
                                                   style: TextStyle(
                                                     color: Colors.grey[600],
                                                     fontSize: 12,

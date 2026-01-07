@@ -159,3 +159,76 @@ export const getAllSubscriptions = async (req, res) => {
         res.status(500).json({ message: "Erreur lors de la récupération des abonnements" });
     }
 };
+
+// Suspend subscription (Admin only)
+export const suspendSubscription = async (req, res) => {
+    try {
+        const { subscriptionId } = req.params;
+
+        const subscription = await prisma.subscription.findUnique({
+            where: { id: parseInt(subscriptionId) }
+        });
+
+        if (!subscription) {
+            return res.status(404).json({ message: "Abonnement non trouvé" });
+        }
+
+        const updated = await prisma.subscription.update({
+            where: { id: parseInt(subscriptionId) },
+            data: { status: 'SUSPENDED' }
+        });
+
+        res.json(updated);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Erreur lors de la suspension" });
+    }
+};
+
+// Cancel subscription (user can cancel own, admin can cancel any)
+export const cancelSubscription = async (req, res) => {
+    try {
+        const { subscriptionId } = req.params;
+        const userId = req.user.id;
+        const isAdmin = req.user.role === 'ADMIN';
+
+        const subscription = await prisma.subscription.findUnique({
+            where: { id: parseInt(subscriptionId) }
+        });
+
+        if (!subscription) {
+            return res.status(404).json({ message: "Abonnement non trouvé" });
+        }
+
+        // Check if user owns the subscription or is admin
+        if (subscription.userId !== userId && !isAdmin) {
+            return res.status(403).json({ message: "Non autorisé" });
+        }
+
+        const updated = await prisma.subscription.update({
+            where: { id: parseInt(subscriptionId) },
+            data: { status: 'CANCELLED' }
+        });
+
+        res.json(updated);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Erreur lors de l'annulation" });
+    }
+};
+
+// Delete subscription (Admin only)
+export const deleteSubscription = async (req, res) => {
+    try {
+        const { subscriptionId } = req.params;
+
+        await prisma.subscription.delete({
+            where: { id: parseInt(subscriptionId) }
+        });
+
+        res.status(204).send();
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Erreur lors de la suppression" });
+    }
+};

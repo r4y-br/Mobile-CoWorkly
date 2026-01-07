@@ -8,6 +8,7 @@ import reservationsRoutes from './src/routes/reservations.js';
 import notificationsRoutes from './src/routes/notifications.js';
 import statsRoutes from './src/routes/stats.js';
 import subscriptionRoutes from './src/routes/subscriptionRoutes.js';
+import usersRoutes from './src/routes/users.js';
 dotenv.config();
 
 const app = express();
@@ -26,6 +27,7 @@ app.use('/reservations', reservationsRoutes);
 app.use('/notifications', notificationsRoutes);
 app.use('/stats', statsRoutes);
 app.use('/subscriptions', subscriptionRoutes);
+app.use('/users', usersRoutes);
 
 // just a health check endpoint
 app.get('/health', (req, res) => {

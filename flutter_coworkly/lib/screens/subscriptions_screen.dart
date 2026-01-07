@@ -24,51 +24,51 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
   final List<Map<String, dynamic>> plans = [
     {
       'id': 'MONTHLY',
-      'name': 'Mensuel',
+      'name': 'Monthly',
       'price': 49,
       'icon': Icons.flash_on,
       'color': Colors.blue,
       'features': [
-        '40 heures par mois',
-        'Tous les espaces',
-        'WiFi haute vitesse',
-        'Réservation prioritaire',
-        'Support 24/7',
+        '40 hours per month',
+        'All spaces',
+        'High-speed WiFi',
+        'Priority booking',
+        '24/7 support',
       ],
       'limits': {'hours': 40, 'spaces': 'all'},
       'popular': false,
     },
     {
       'id': 'QUARTERLY',
-      'name': 'Trimestriel',
+      'name': 'Quarterly',
       'price': 129,
       'icon': Icons.star,
       'color': const Color(0xFF10B981),
       'features': [
-        '120 heures sur 3 mois',
-        'Tous les espaces premium',
-        'Salles de réunion incluses',
-        'WiFi haute vitesse',
-        'Support prioritaire 24/7',
-        '-12% vs mensuel',
+        '120 hours over 3 months',
+        'All premium spaces',
+        'Meeting rooms included',
+        'High-speed WiFi',
+        'Priority 24/7 support',
+        '-12% vs monthly',
       ],
       'limits': {'hours': 120, 'spaces': 'premium'},
       'popular': true,
     },
     {
       'id': 'SEMI_ANNUAL',
-      'name': 'Semestriel',
+      'name': 'Semi-Annual',
       'price': 239,
       'icon': Icons.emoji_events,
       'color': Colors.purple,
       'features': [
-        '250 heures sur 6 mois',
-        'Tous les espaces premium',
-        'Salles de réunion illimitées',
-        'WiFi haute vitesse',
-        'Support prioritaire 24/7',
-        'Casier personnel',
-        '-20% vs mensuel',
+        '250 hours over 6 months',
+        'All premium spaces',
+        'Unlimited meeting rooms',
+        'High-speed WiFi',
+        'Priority 24/7 support',
+        'Personal locker',
+        '-20% vs monthly',
       ],
       'limits': {'hours': 250, 'spaces': 'premium'},
       'popular': false,
@@ -120,7 +120,7 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Demande d\'abonnement envoyée ! En attente d\'approbation.'),
+            content: Text('Subscription request sent! Awaiting approval.'),
             backgroundColor: Color(0xFF10B981),
           ),
         );
@@ -143,7 +143,7 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
     final user = appProvider.currentUser;
     final currentPlanData = plans.firstWhere(
       (p) => p['id'] == currentPlan,
-      orElse: () => {'name': 'Aucun', 'icon': Icons.block, 'limits': {'hours': 0}},
+      orElse: () => {'name': 'None', 'icon': Icons.block, 'limits': {'hours': 0}},
     );
     final progressPercentage = totalHours > 0 ? (usedHours / totalHours) : 0.0;
 
@@ -201,7 +201,7 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
-                              'Abonnements',
+                              'Subscriptions',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 24,
@@ -210,7 +210,7 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'Choisissez le plan adapté à vos besoins',
+                              'Choose the plan that fits your needs',
                               style: TextStyle(
                                 color: Colors.white.withOpacity(0.8),
                                 fontSize: 14,
@@ -253,7 +253,7 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Plan actuel',
+                                  'Current Plan',
                                   style: TextStyle(
                                     color: Colors.white.withOpacity(0.9),
                                     fontSize: 12,
@@ -290,7 +290,7 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                'Heures utilisées',
+                                'Hours used',
                                 style: TextStyle(
                                   color: Colors.white.withOpacity(0.9),
                                   fontSize: 12,
@@ -333,10 +333,10 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
                             const SizedBox(width: 8),
                             Text(
                               currentStatus == 'ACTIVE' 
-                                  ? 'Abonnement actif' 
+                                  ? 'Active subscription' 
                                   : currentStatus == 'PENDING' 
-                                      ? 'En attente d\'approbation'
-                                      : 'Aucun abonnement actif',
+                                      ? 'Awaiting approval'
+                                      : 'No active subscription',
                               style: TextStyle(
                                 color: Colors.white.withOpacity(0.9),
                                 fontSize: 12,
@@ -473,7 +473,7 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
                                             ),
                                           ),
                                           Text(
-                                            plan['id'] == 'MONTHLY' ? '/mois' : plan['id'] == 'QUARTERLY' ? '/trim.' : '/sem.',
+                                            plan['id'] == 'MONTHLY' ? '/month' : plan['id'] == 'QUARTERLY' ? '/quarter' : '/week',
                                             style: TextStyle(
                                               fontSize: 12,
                                               color: Colors.grey[600],
@@ -562,8 +562,8 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
                                       const EdgeInsets.symmetric(vertical: 16),
                                 ),
                                 child: Text(isSelected
-                                    ? 'Sélectionné'
-                                    : 'Choisir ce plan'),
+                                    ? 'Selected'
+                                    : 'Choose this plan'),
                               ),
                             ),
                           ],
@@ -598,7 +598,7 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 const Text(
-                                  'Méthode de paiement',
+                                  'Payment Method',
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -615,7 +615,7 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
                           ),
                           TextButton(
                             onPressed: () {},
-                            child: const Text('Modifier'),
+                            child: const Text('Edit'),
                           ),
                         ],
                       ),
@@ -633,7 +633,7 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
-                                'Votre abonnement sera mis à jour immédiatement. Le montant sera ajusté au prorata.',
+                                'Your subscription will be updated immediately. The amount will be prorated.',
                                 style: TextStyle(
                                   color: Colors.grey[600],
                                   fontSize: 12,
@@ -665,7 +665,7 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
                                     color: Colors.white,
                                   ),
                                 )
-                              : const Text('Confirmer le changement'),
+                              : const Text('Confirm change'),
                         ),
                       ),
                     ],
@@ -693,7 +693,7 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'Pourquoi s\'abonner ?',
+                      'Why subscribe?',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -702,21 +702,21 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
                     const SizedBox(height: 16),
                     _buildBenefitItem(
                       icon: Icons.flash_on,
-                      title: 'Flexibilité totale',
-                      description: 'Annulez ou modifiez à tout moment',
+                      title: 'Total flexibility',
+                      description: 'Cancel or modify at any time',
                     ),
                     const SizedBox(height: 12),
                     _buildBenefitItem(
                       icon: Icons.emoji_events,
-                      title: 'Accès premium',
-                      description: 'Espaces exclusifs et services VIP',
+                      title: 'Premium access',
+                      description: 'Exclusive spaces and VIP services',
                     ),
                     const SizedBox(height: 12),
                     _buildBenefitItem(
                       icon: Icons.star,
-                      title: 'Économies garanties',
+                      title: 'Guaranteed savings',
                       description:
-                          "Jusqu'à 40% d'économies vs. réservations ponctuelles",
+                          'Up to 40% savings vs. one-time bookings',
                     ),
                   ],
                 ),

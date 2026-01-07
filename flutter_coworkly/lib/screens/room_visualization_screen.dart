@@ -23,22 +23,22 @@ class _RoomVisualizationScreenState extends State<RoomVisualizationScreen> {
   List<Map<String, dynamic>> _seats = [];
 
   final List<Map<String, dynamic>> _seatLayout = [
-    // Rangée 1
+    // Row 1
     {'number': 1, 'x': 0.2, 'y': 0.2},
     {'number': 2, 'x': 0.4, 'y': 0.2},
     {'number': 3, 'x': 0.6, 'y': 0.2},
     {'number': 4, 'x': 0.8, 'y': 0.2},
-    // Rangée 2
+    // Row 2
     {'number': 5, 'x': 0.2, 'y': 0.4},
     {'number': 6, 'x': 0.4, 'y': 0.4},
     {'number': 7, 'x': 0.6, 'y': 0.4},
     {'number': 8, 'x': 0.8, 'y': 0.4},
-    // Rangée 3
+    // Row 3
     {'number': 9, 'x': 0.2, 'y': 0.6},
     {'number': 10, 'x': 0.4, 'y': 0.6},
     {'number': 11, 'x': 0.6, 'y': 0.6},
     {'number': 12, 'x': 0.8, 'y': 0.6},
-    // Rangée 4
+    // Row 4
     {'number': 13, 'x': 0.2, 'y': 0.8},
     {'number': 14, 'x': 0.4, 'y': 0.8},
     {'number': 15, 'x': 0.6, 'y': 0.8},
@@ -69,7 +69,7 @@ class _RoomVisualizationScreenState extends State<RoomVisualizationScreen> {
         Provider.of<AppProvider>(context, listen: false).selectedRoomId;
     if (roomId == null || roomId.isEmpty) {
       setState(() {
-        _loadError = 'Aucune salle selectionnee.';
+        _loadError = 'No room selected.';
         _isLoading = false;
       });
       return;
@@ -157,7 +157,7 @@ class _RoomVisualizationScreenState extends State<RoomVisualizationScreen> {
             Icon(Icons.cloud_off, size: 48, color: Colors.grey[500]),
             const SizedBox(height: 16),
             Text(
-              _loadError ?? 'Erreur lors du chargement des chaises.',
+              _loadError ?? 'Error loading seats.',
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.grey[700]),
             ),
@@ -171,7 +171,7 @@ class _RoomVisualizationScreenState extends State<RoomVisualizationScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: const Text('Réessayer'),
+              child: const Text('Retry'),
             ),
           ],
         ),
@@ -283,11 +283,11 @@ class _RoomVisualizationScreenState extends State<RoomVisualizationScreen> {
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                _buildStatCard(availableCount, 'Disponibles', Colors.green),
+                _buildStatCard(availableCount, 'Available', Colors.green),
                 const SizedBox(width: 12),
-                _buildStatCard(occupiedCount, 'Occupés', Colors.red),
+                _buildStatCard(occupiedCount, 'Occupied', Colors.red),
                 const SizedBox(width: 12),
-                _buildStatCard(reservedCount, 'Réservés', Colors.orange),
+                _buildStatCard(reservedCount, 'Reserved', Colors.orange),
               ],
             ),
           ),
@@ -438,7 +438,7 @@ class _RoomVisualizationScreenState extends State<RoomVisualizationScreen> {
                                                             16)),
                                               ),
                                               child: const Text(
-                                                'Entrée',
+                                                'Entrance',
                                                 style: TextStyle(
                                                   color: Colors.white,
                                                   fontSize: 12,
@@ -479,12 +479,12 @@ class _RoomVisualizationScreenState extends State<RoomVisualizationScreen> {
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       _buildLegendItem(
-                                          Colors.green, 'Disponible'),
+                                          Colors.green, 'Available'),
                                       const SizedBox(width: 16),
-                                      _buildLegendItem(Colors.red, 'Occupé'),
+                                      _buildLegendItem(Colors.red, 'Occupied'),
                                       const SizedBox(width: 16),
                                       _buildLegendItem(
-                                          Colors.orange, 'Réservé'),
+                                          Colors.orange, 'Reserved'),
                                     ],
                                   ),
                                 ),
@@ -519,14 +519,14 @@ class _RoomVisualizationScreenState extends State<RoomVisualizationScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Siège ${selectedSeatNumber ?? ''}',
+                              'Seat ${selectedSeatNumber ?? ''}',
                               style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                             Text(
-                              'Zone principale',
+                              'Main area',
                               style: TextStyle(
                                 color: Colors.grey[600],
                                 fontSize: 14,
@@ -542,7 +542,7 @@ class _RoomVisualizationScreenState extends State<RoomVisualizationScreen> {
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: const Text(
-                            'Disponible',
+                            'Available',
                             style: TextStyle(
                               color: Color(0xFF10B981),
                               fontWeight: FontWeight.bold,
@@ -575,7 +575,7 @@ class _RoomVisualizationScreenState extends State<RoomVisualizationScreen> {
                           ),
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
-                        child: const Text('Réserver ce siège'),
+                        child: const Text('Book this seat'),
                       ),
                     ),
                   ],

@@ -37,3 +37,7 @@ export const authorize = (...roles) => {
         next();
     };
 };
+
+// Alias pour compatibilité
+export const requireAuth = authenticate;
+export const requireAdmin = authorize('ADMIN');

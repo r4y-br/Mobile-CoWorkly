@@ -90,7 +90,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     if (token == null || token.isEmpty) {
       setState(() {
         _isLoading = false;
-        _loadError = 'Connexion requise pour charger les notifications.';
+        _loadError = 'Login required to load notifications.';
       });
       return;
     }
@@ -151,13 +151,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         );
       case 'REMINDER_RESERVATION':
         return const NotificationStyle(
-          'Rappel de reservation',
+          'Reservation Reminder',
           Icons.alarm,
           Color(0xFFF59E0B),
         );
       case 'SUBSCRIPTION_UPDATE':
         return const NotificationStyle(
-          'Mise a jour abonnement',
+          'Subscription Update',
           Icons.workspace_premium,
           Color(0xFF6366F1),
         );
@@ -174,18 +174,18 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final now = DateTime.now();
     final diff = now.difference(date);
     if (diff.inSeconds < 60) {
-      return 'A l\'instant';
+      return 'Just now';
     }
     if (diff.inMinutes < 60) {
-      return 'Il y a ${diff.inMinutes} min';
+      return '${diff.inMinutes} min ago';
     }
     if (diff.inHours < 24) {
-      return 'Il y a ${diff.inHours} h';
+      return '${diff.inHours} h ago';
     }
     if (diff.inDays < 7) {
-      return 'Il y a ${diff.inDays} j';
+      return '${diff.inDays} d ago';
     }
-    return '${date.day}/${date.month}/${date.year}';
+    return '${date.month}/${date.day}/${date.year}';
   }
 
   Future<void> _markAsRead(NotificationModel notification) async {
@@ -195,7 +195,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
     final token = Provider.of<AppProvider>(context, listen: false).authToken;
     if (token == null || token.isEmpty) {
-      _showError('Connexion requise.');
+      _showError('Login required.');
       return;
     }
 
@@ -226,7 +226,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Future<void> _markAllAsRead() async {
     final token = Provider.of<AppProvider>(context, listen: false).authToken;
     if (token == null || token.isEmpty) {
-      _showError('Connexion requise.');
+      _showError('Login required.');
       return;
     }
 
@@ -254,7 +254,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Future<void> _deleteNotification(NotificationModel notification) async {
     final token = Provider.of<AppProvider>(context, listen: false).authToken;
     if (token == null || token.isEmpty) {
-      _showError('Connexion requise.');
+      _showError('Login required.');
       return;
     }
 
@@ -288,7 +288,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Future<void> _clearAll() async {
     final token = Provider.of<AppProvider>(context, listen: false).authToken;
     if (token == null || token.isEmpty) {
-      _showError('Connexion requise.');
+      _showError('Login required.');
       return;
     }
 
@@ -579,7 +579,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             Icon(Icons.cloud_off, size: 48, color: Colors.grey[500]),
             const SizedBox(height: 16),
             Text(
-              _loadError ?? 'Erreur lors du chargement des notifications.',
+              _loadError ?? 'Error loading notifications.',
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.grey[700]),
             ),
@@ -621,7 +621,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           ),
           const SizedBox(height: 16),
           const Text(
-            'Aucune notification',
+            'No notifications',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -629,7 +629,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Vous etes a jour !',
+            'You\'re all caught up!',
             style: TextStyle(
               color: Colors.grey[600],
             ),
@@ -644,7 +644,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            child: const Text('Actualiser'),
+            child: const Text('Refresh'),
           ),
         ],
       ),
@@ -842,3 +842,4 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 }
+

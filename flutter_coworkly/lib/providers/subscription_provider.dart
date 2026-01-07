@@ -15,7 +15,7 @@ class SubscriptionProvider with ChangeNotifier {
     try {
       _subscription = await SubscriptionApi.getMySubscription(token);
     } catch (e) {
-      debugPrint('Erreur Subscription: $e');
+      debugPrint('Subscription Error: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -25,9 +25,9 @@ class SubscriptionProvider with ChangeNotifier {
   Future<void> requestNewSubscription(String token, String plan) async {
     try {
       await SubscriptionApi.subscribe(token, plan);
-      await fetchSubscription(token); // Rafraîchir après la demande
+      await fetchSubscription(token); // Refresh after request
     } catch (e) {
-      debugPrint('Erreur Subscribe: $e');
+      debugPrint('Subscribe Error: $e');
       rethrow;
     }
   }

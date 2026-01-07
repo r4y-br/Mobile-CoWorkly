@@ -28,9 +28,9 @@ class _BookingScreenState extends State<BookingScreen> {
   bool _hasActiveSubscription = false;
 
   final List<Map<String, dynamic>> bookingTypes = [
-    {'id': 'hourly', 'label': 'À l\'heure', 'price': 5, 'unit': 'heure'},
-    {'id': 'daily', 'label': 'À la journée', 'price': 25, 'unit': 'jour'},
-    {'id': 'weekly', 'label': 'À la semaine', 'price': 120, 'unit': 'semaine'},
+    {'id': 'hourly', 'label': 'Hourly', 'price': 5, 'unit': 'hour'},
+    {'id': 'daily', 'label': 'Daily', 'price': 25, 'unit': 'day'},
+    {'id': 'weekly', 'label': 'Weekly', 'price': 120, 'unit': 'week'},
   ];
 
   final List<String> timeSlots = [
@@ -120,7 +120,7 @@ class _BookingScreenState extends State<BookingScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          'Réservation',
+                          'Booking',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 20,
@@ -128,7 +128,7 @@ class _BookingScreenState extends State<BookingScreen> {
                           ),
                         ),
                         Text(
-                          'Étape $step sur 3',
+                          'Step $step of 3',
                           style: TextStyle(
                             color: Colors.white.withOpacity(0.8),
                             fontSize: 12,
@@ -235,7 +235,7 @@ class _BookingScreenState extends State<BookingScreen> {
                         color: Colors.white,
                       ),
                     )
-                  : Text(step == 3 ? 'Confirmer et payer' : 'Continuer'),
+                  : Text(step == 3 ? 'Confirm and pay' : 'Continue'),
             ),
           ),
         ),
@@ -254,14 +254,14 @@ class _BookingScreenState extends State<BookingScreen> {
 
     if (user == null) {
       setState(() {
-        _submitError = 'Connectez-vous avant de reserver.';
+        _submitError = 'Please log in before booking.';
       });
       return;
     }
 
     if (roomId == null || roomId.isEmpty) {
       setState(() {
-        _submitError = 'Selectionnez une salle avant de reserver.';
+        _submitError = 'Please select a room before booking.';
       });
       return;
     }
@@ -269,14 +269,14 @@ class _BookingScreenState extends State<BookingScreen> {
     final token = appProvider.authToken;
     if (token == null || token.isEmpty) {
       setState(() {
-        _submitError = 'Session invalide. Reconnectez-vous.';
+        _submitError = 'Invalid session. Please log in again.';
       });
       return;
     }
 
     if (seatId == null || seatId.isEmpty) {
       setState(() {
-        _submitError = 'Selectionnez une chaise avant de reserver.';
+        _submitError = 'Please select a seat before booking.';
       });
       return;
     }
@@ -317,7 +317,7 @@ class _BookingScreenState extends State<BookingScreen> {
       appProvider.confirmBooking();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Réservation confirmée !'),
+          content: Text('Booking confirmed!'),
           backgroundColor: Color(0xFF10B981),
         ),
       );
@@ -400,14 +400,14 @@ class _BookingScreenState extends State<BookingScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Abonnement $_subscriptionPlan',
+                        'Subscription $_subscriptionPlan',
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       Text(
-                        '$_remainingHours heures restantes',
+                        '$_remainingHours hours remaining',
                         style: TextStyle(
                           color: Colors.white.withOpacity(0.9),
                           fontSize: 12,
@@ -448,7 +448,7 @@ class _BookingScreenState extends State<BookingScreen> {
                   ),
                   const SizedBox(width: 16),
                   const Text(
-                    'Type de réservation',
+                    'Booking Type',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -503,7 +503,7 @@ class _BookingScreenState extends State<BookingScreen> {
                                 ),
                               ),
                               Text(
-                                '${type['price']}€ par ${type['unit']}',
+                                '${type['price']}€ per ${type['unit']}',
                                 style: TextStyle(
                                   color: Colors.grey[600],
                                   fontSize: 12,
@@ -540,7 +540,7 @@ class _BookingScreenState extends State<BookingScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Durée',
+                'Duration',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -635,7 +635,7 @@ class _BookingScreenState extends State<BookingScreen> {
                   ),
                   const SizedBox(width: 16),
                   const Text(
-                    'Sélectionner une date',
+                    'Select a date',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -686,7 +686,7 @@ class _BookingScreenState extends State<BookingScreen> {
                   ),
                   const SizedBox(width: 16),
                   const Text(
-                    'Heure de début',
+                    'Start Time',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -762,7 +762,7 @@ class _BookingScreenState extends State<BookingScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Total à payer',
+                    'Total to pay',
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.9),
                       fontSize: 14,
@@ -829,7 +829,7 @@ class _BookingScreenState extends State<BookingScreen> {
                   ),
                   const SizedBox(width: 16),
                   const Text(
-                    'Méthode de paiement',
+                    'Payment Method',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -840,15 +840,15 @@ class _BookingScreenState extends State<BookingScreen> {
               const SizedBox(height: 24),
               _buildPaymentOption(
                 'card',
-                'Carte bancaire',
-                'Paiement sécurisé',
+                'Credit Card',
+                'Secure payment',
                 Icons.credit_card,
               ),
               const SizedBox(height: 12),
               _buildPaymentOption(
                 'subscription',
-                'Abonnement',
-                'Utiliser mes crédits',
+                'Subscription',
+                'Use my credits',
                 Icons.card_membership,
                 badge: 'Pro',
               ),
@@ -874,7 +874,7 @@ class _BookingScreenState extends State<BookingScreen> {
               children: [
                 TextField(
                   decoration: InputDecoration(
-                    labelText: 'Numéro de carte',
+                    labelText: 'Card number',
                     hintText: '1234 5678 9012 3456',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
@@ -888,7 +888,7 @@ class _BookingScreenState extends State<BookingScreen> {
                       child: TextField(
                         decoration: InputDecoration(
                           labelText: 'Expiration',
-                          hintText: 'MM/AA',
+                          hintText: 'MM/YY',
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
