@@ -4,7 +4,7 @@ import '../providers/app_provider.dart';
 import '../models/index.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  const HomeScreen({super.key});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -231,7 +231,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Taux d\'occupation: ${occupancyPercentage}%',
+                            'Taux d\'occupation: $occupancyPercentage%',
                             style: Theme.of(context).textTheme.bodySmall,
                             textAlign: TextAlign.center,
                           ),
@@ -402,9 +402,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                       mainAxisAlignment:
                                           MainAxisAlignment.center,
                                       children: [
-                                        Icon(
+                                        const Icon(
                                           Icons.wifi,
-                                          color: const Color(0xFF10B981),
+                                          color: Color(0xFF10B981),
                                         ),
                                         const SizedBox(height: 8),
                                         Text(
@@ -477,7 +477,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                 ),
                               )
-                              .toList(),
+                              ,
                           if (coWorkingInfo.features.length > 4)
                             TextButton(
                               onPressed: () => setState(

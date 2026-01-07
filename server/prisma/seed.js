@@ -186,10 +186,15 @@ async function main() {
     const tomorrowEnd = new Date(tomorrow);
     tomorrowEnd.setHours(17, 0, 0, 0);
 
+    // Find the first seat in Creative Hub (roomId: 1, number: 1)
+    const creativeHubSeat1 = await prisma.seat.findFirst({
+        where: { roomId: 1, number: 1 }
+    });
+
     const reservation = await prisma.reservation.create({
         data: {
             userId: user.id,
-            seatId: 1, // First seat in Creative Hub
+            seatId: creativeHubSeat1?.id ?? (await prisma.seat.findFirst({ where: { roomId: 1 } })).id,
             startTime: tomorrow,
             endTime: tomorrowEnd,
             type: 'DAILY',

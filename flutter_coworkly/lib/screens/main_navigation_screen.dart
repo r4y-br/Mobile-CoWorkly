@@ -14,7 +14,7 @@ import 'admin_screen.dart';
 import '../widgets/bottom_nav.dart';
 
 class MainNavigationScreen extends StatelessWidget {
-  const MainNavigationScreen({Key? key}) : super(key: key);
+  const MainNavigationScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

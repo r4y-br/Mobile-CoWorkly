@@ -6,7 +6,7 @@ import '../services/reservations_api.dart';
 import '../models/user.dart';
 
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({Key? key}) : super(key: key);
+  const DashboardScreen({super.key});
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -65,15 +65,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 children: [
-                  _buildMonthlyActivityChart(context),
-                  const SizedBox(height: 16),
-                  _buildSpaceDistribution(context),
-                  const SizedBox(height: 16),
-                  _buildAchievements(context),
-                  const SizedBox(height: 16),
                   _buildRecentBookings(context),
-                  const SizedBox(height: 16),
-                  _buildMonthlyGoal(context),
                   const SizedBox(height: 80), // Bottom padding for nav bar
                 ],
               ),
@@ -149,8 +141,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ),
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(12),
@@ -184,7 +178,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               _buildQuickStat('${user?.hours ?? 0}', 'Heures totales'),
               const SizedBox(width: 12),
               _buildQuickStat(
-                  '${user?.spending.toStringAsFixed(0) ?? 0}€', 'Dépensé'),
+                '${user?.spending.toStringAsFixed(0) ?? 0}€',
+                'Dépensé',
+              ),
               const SizedBox(width: 12),
               _buildQuickStat('${user?.bookings ?? 0}', 'Réservations'),
             ],
@@ -260,17 +256,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 children: [
                   const Text(
                     'Activité mensuelle',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   Text(
                     'Heures de coworking',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[500],
-                    ),
+                    style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                   ),
                 ],
               ),
@@ -302,13 +292,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     Container(
                       width: 30,
                       height: height,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
                           colors: [Color(0xFF6366F1), Color(0xFF3B82F6)],
                         ),
-                        borderRadius: const BorderRadius.vertical(
+                        borderRadius: BorderRadius.vertical(
                           top: Radius.circular(8),
                         ),
                       ),
@@ -316,10 +306,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     const SizedBox(height: 8),
                     Text(
                       item['month'] as String,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[500],
-                      ),
+                      style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                     ),
                   ],
                 );
@@ -356,10 +343,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         children: [
           const Text(
             'Espaces favoris',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 24),
           Row(
@@ -449,10 +433,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         children: [
           const Text(
             'Succès récents',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           _buildAchievementItem(
@@ -505,10 +486,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               Text(
                 subtitle,
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 12,
-                ),
+                style: TextStyle(color: Colors.grey[600], fontSize: 12),
               ),
             ],
           ),
@@ -549,9 +527,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ],
         ),
-        child: const Center(
-          child: CircularProgressIndicator(),
-        ),
+        child: const Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -598,15 +574,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
             children: [
               const Text(
                 'Mes réservations',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               TextButton(
                 onPressed: _loadReservations,
-                child: Row(
-                  children: const [
+                child: const Row(
+                  children: [
                     Icon(Icons.refresh, size: 16),
                     SizedBox(width: 4),
                     Text('Actualiser'),
@@ -621,8 +594,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
               padding: const EdgeInsets.symmetric(vertical: 20),
               child: Column(
                 children: [
-                  Icon(Icons.event_available,
-                      size: 48, color: Colors.grey[400]),
+                  Icon(
+                    Icons.event_available,
+                    size: 48,
+                    color: Colors.grey[400],
+                  ),
                   const SizedBox(height: 8),
                   Text(
                     'Aucune réservation',
@@ -632,16 +608,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             )
           else
-            ..._reservations.take(5).map((booking) {
+            ..._reservations.take(10).map((booking) {
               final seat = booking['seat'] as Map<String, dynamic>?;
               final room = seat?['room'] as Map<String, dynamic>?;
               final spaceName = room?['name'] ?? 'Salle inconnue';
-              final seatLabel = seat?['label'] ?? '';
-              final date = booking['date'] ?? '';
-              final startTime = booking['startTime'] ?? '';
-              final endTime = booking['endTime'] ?? '';
-              final status = booking['status'] ?? 'pending';
-              final price = booking['price']?.toString() ?? '0';
+              final seatNumber = seat?['number']?.toString() ?? '';
+              final startTimeIso = booking['startTime']?.toString();
+              final endTimeIso = booking['endTime']?.toString();
+              final start = startTimeIso != null
+                  ? DateTime.tryParse(startTimeIso)
+                  : null;
+              final end = endTimeIso != null
+                  ? DateTime.tryParse(endTimeIso)
+                  : null;
+              final status =
+                  (booking['status'] as String?)?.toUpperCase() ?? 'PENDING';
 
               String statusLabel;
               Color statusColor;
@@ -685,7 +666,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '$spaceName - $seatLabel',
+                            '$spaceName - Siège $seatNumber',
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
@@ -694,22 +675,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           const SizedBox(height: 2),
                           Row(
                             children: [
-                              Icon(Icons.calendar_today,
-                                  size: 12, color: Colors.grey[500]),
+                              Icon(
+                                Icons.calendar_today,
+                                size: 12,
+                                color: Colors.grey[500],
+                              ),
                               const SizedBox(width: 4),
                               Text(
-                                date,
+                                start != null
+                                    ? '${start.year}-${start.month.toString().padLeft(2, '0')}-${start.day.toString().padLeft(2, '0')}'
+                                    : '',
                                 style: TextStyle(
                                   color: Colors.grey[500],
                                   fontSize: 12,
                                 ),
                               ),
                               const SizedBox(width: 8),
-                              Icon(Icons.access_time,
-                                  size: 12, color: Colors.grey[500]),
+                              Icon(
+                                Icons.access_time,
+                                size: 12,
+                                color: Colors.grey[500],
+                              ),
                               const SizedBox(width: 4),
                               Text(
-                                '$startTime - $endTime',
+                                start != null && end != null
+                                    ? '${start.hour.toString().padLeft(2, '0')}:${start.minute.toString().padLeft(2, '0')} - ${end.hour.toString().padLeft(2, '0')}:${end.minute.toString().padLeft(2, '0')}'
+                                    : '',
                                 style: TextStyle(
                                   color: Colors.grey[500],
                                   fontSize: 12,
@@ -723,17 +714,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text(
-                          '${price}€',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                        ),
+                        const SizedBox(height: 0),
                         const SizedBox(height: 4),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: statusColor.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(4),
@@ -741,10 +728,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ),
                           child: Text(
                             statusLabel,
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: statusColor,
-                            ),
+                            style: TextStyle(fontSize: 10, color: statusColor),
                           ),
                         ),
                       ],
@@ -777,10 +761,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         children: [
           const Text(
             'Objectif mensuel',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           Row(
@@ -788,17 +769,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
             children: [
               Text(
                 'Heures de coworking',
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 14,
-                ),
+                style: TextStyle(color: Colors.grey[600], fontSize: 14),
               ),
               const Text(
                 '24 / 40h',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
               ),
             ],
           ),
@@ -809,17 +784,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
               value: 0.6,
               minHeight: 8,
               backgroundColor: Colors.grey[100],
-              valueColor:
-                  const AlwaysStoppedAnimation<Color>(Color(0xFF6366F1)),
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                Color(0xFF6366F1),
+              ),
             ),
           ),
           const SizedBox(height: 8),
           Text(
             'Plus que 16 heures pour atteindre votre objectif !',
-            style: TextStyle(
-              color: Colors.grey[500],
-              fontSize: 12,
-            ),
+            style: TextStyle(color: Colors.grey[500], fontSize: 12),
           ),
         ],
       ),

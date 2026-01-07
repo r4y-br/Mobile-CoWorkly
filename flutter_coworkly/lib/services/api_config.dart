@@ -5,7 +5,7 @@ class ApiConfig {
   // For Android emulator use: 'http://10.0.2.2:4000'
   // For iOS simulator use: 'http://localhost:4000'
   // For physical device use your computer's local IP: 'http://192.168.x.x:4000'
-  static const String _serverHost = '192.168.1.106';  // Update this!
+  static const String _serverHost = '192.168.81.120';
   static const int _serverPort = 4000;
 
   static String get baseUrl {
@@ -16,7 +16,7 @@ class ApiConfig {
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
         // Use 10.0.2.2 for Android emulator, or _serverHost for physical device
-        final host = _serverHost == 'localhost' ? '10.0.2.2' : _serverHost;
+        const host = _serverHost == 'localhost' ? '10.0.2.2' : _serverHost;
         return 'http://$host:$_serverPort';
       case TargetPlatform.iOS:
       case TargetPlatform.macOS:

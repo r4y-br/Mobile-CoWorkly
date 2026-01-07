@@ -4,7 +4,7 @@ import '../providers/app_provider.dart';
 import '../services/reservations_api.dart';
 
 class BookingScreen extends StatefulWidget {
-  const BookingScreen({Key? key}) : super(key: key);
+  const BookingScreen({super.key});
 
   @override
   State<BookingScreen> createState() => _BookingScreenState();
@@ -48,8 +48,9 @@ class _BookingScreenState extends State<BookingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final selectedBookingConfig =
-        bookingTypes.firstWhere((t) => t['id'] == bookingType);
+    final selectedBookingConfig = bookingTypes.firstWhere(
+      (t) => t['id'] == bookingType,
+    );
     final totalPrice = (selectedBookingConfig['price'] as int) * duration;
 
     return Scaffold(
@@ -281,10 +282,6 @@ class _BookingScreenState extends State<BookingScreen> {
         _isSubmitting = false;
       });
 
-      appProvider.recordBooking(
-        price: totalPrice.toDouble(),
-        hours: _estimateHours(),
-      );
       appProvider.confirmBooking();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -366,16 +363,15 @@ class _BookingScreenState extends State<BookingScreen> {
                       color: const Color(0xFF6366F1).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    child: const Icon(Icons.calendar_today,
-                        color: Color(0xFF6366F1)),
+                    child: const Icon(
+                      Icons.calendar_today,
+                      color: Color(0xFF6366F1),
+                    ),
                   ),
                   const SizedBox(width: 16),
                   const Text(
                     'Type de réservation',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
@@ -441,7 +437,7 @@ class _BookingScreenState extends State<BookingScreen> {
                     ),
                   ),
                 );
-              }).toList(),
+              }),
             ],
           ),
         ),
@@ -464,10 +460,7 @@ class _BookingScreenState extends State<BookingScreen> {
             children: [
               const Text(
                 'Durée',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 24),
               Row(
@@ -491,10 +484,7 @@ class _BookingScreenState extends State<BookingScreen> {
                       ),
                       Text(
                         '${selectedConfig['unit']}(s)',
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 14,
-                        ),
+                        style: TextStyle(color: Colors.grey[600], fontSize: 14),
                       ),
                     ],
                   ),
@@ -559,10 +549,7 @@ class _BookingScreenState extends State<BookingScreen> {
                   const SizedBox(width: 16),
                   const Text(
                     'Sélectionner une date',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
@@ -610,10 +597,7 @@ class _BookingScreenState extends State<BookingScreen> {
                   const SizedBox(width: 16),
                   const Text(
                     'Heure de début',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
@@ -631,10 +615,13 @@ class _BookingScreenState extends State<BookingScreen> {
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 12),
+                        horizontal: 20,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
-                        color:
-                            isSelected ? const Color(0xFF6366F1) : Colors.white,
+                        color: isSelected
+                            ? const Color(0xFF6366F1)
+                            : Colors.white,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
                           color: isSelected
@@ -753,10 +740,7 @@ class _BookingScreenState extends State<BookingScreen> {
                   const SizedBox(width: 16),
                   const Text(
                     'Méthode de paiement',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
@@ -841,8 +825,12 @@ class _BookingScreenState extends State<BookingScreen> {
   }
 
   Widget _buildPaymentOption(
-      String id, String title, String subtitle, IconData icon,
-      {String? badge}) {
+    String id,
+    String title,
+    String subtitle,
+    IconData icon, {
+    String? badge,
+  }) {
     final isSelected = paymentMethod == id;
     return GestureDetector(
       onTap: () {
@@ -884,10 +872,7 @@ class _BookingScreenState extends State<BookingScreen> {
                   ),
                   Text(
                     subtitle,
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
                   ),
                 ],
               ),

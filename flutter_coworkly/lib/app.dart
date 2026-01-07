@@ -5,7 +5,7 @@ import 'providers/app_provider.dart';
 import 'screens/index.dart';
 
 class CoWorklyApp extends StatelessWidget {
-  const CoWorklyApp({Key? key}) : super(key: key);
+  const CoWorklyApp({super.key});
 
   @override
   Widget build(BuildContext context) {

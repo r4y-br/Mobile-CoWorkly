@@ -49,7 +49,7 @@ class NotificationStyle {
 }
 
 class NotificationsScreen extends StatefulWidget {
-  const NotificationsScreen({Key? key}) : super(key: key);
+  const NotificationsScreen({super.key});
 
   @override
   State<NotificationsScreen> createState() => _NotificationsScreenState();
@@ -119,13 +119,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   NotificationModel _mapNotification(Map<String, dynamic> data) {
     final type = data['type']?.toString() ?? 'GENERAL';
     final style = _styleForType(type);
+    final createdAt = _parseDate(data['createdAt']) ?? DateTime.now();
+    final isRead = data['isRead'] == true;
     return NotificationModel(
       id: data['id']?.toString() ?? '',
       type: type,
-      title: style.title,
-      message: data['content']?.toString() ?? '',
-      sentAt: _parseDate(data['sentAt']) ?? DateTime.now(),
-      readAt: _parseDate(data['readAt']),
+      title: data['title']?.toString() ?? style.title,
+      message: data['message']?.toString() ?? '',
+      sentAt: createdAt,
+      readAt: isRead ? createdAt : null,
       icon: style.icon,
       color: style.color,
     );
@@ -199,8 +201,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       return;
     }
 
-    final index =
-        _notifications.indexWhere((item) => item.id == notification.id);
+    final index = _notifications.indexWhere(
+      (item) => item.id == notification.id,
+    );
     if (index == -1) {
       return;
     }
@@ -258,8 +261,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       return;
     }
 
-    final index =
-        _notifications.indexWhere((item) => item.id == notification.id);
+    final index = _notifications.indexWhere(
+      (item) => item.id == notification.id,
+    );
     if (index == -1) {
       return;
     }
@@ -311,9 +315,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     if (!mounted) {
       return;
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -329,8 +333,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         children: [
           // Header
           Container(
-            padding:
-                const EdgeInsets.only(top: 48, left: 16, right: 16, bottom: 24),
+            padding: const EdgeInsets.only(
+              top: 48,
+              left: 16,
+              right: 16,
+              bottom: 24,
+            ),
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
@@ -386,7 +394,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                             style: OutlinedButton.styleFrom(
                               foregroundColor: Colors.white,
                               side: BorderSide(
-                                  color: Colors.white.withOpacity(0.3)),
+                                color: Colors.white.withOpacity(0.3),
+                              ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(20),
                               ),
@@ -398,8 +407,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         onPressed: _clearAll,
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.white,
-                          side:
-                              BorderSide(color: Colors.white.withOpacity(0.3)),
+                          side: BorderSide(
+                            color: Colors.white.withOpacity(0.3),
+                          ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(20),
                           ),
@@ -417,152 +427,147 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _loadError != null
-                    ? _buildErrorState()
-                    : _notifications.isEmpty
-                        ? _buildEmptyState()
-                        : RefreshIndicator(
-                            onRefresh: _loadNotifications,
-                            child: ListView.builder(
-                              padding: const EdgeInsets.all(16),
-                              itemCount: _notifications.length,
-                              itemBuilder: (context, index) {
-                                final notification = _notifications[index];
-                                return Dismissible(
-                                  key: Key(notification.id),
-                                  direction: DismissDirection.endToStart,
-                                  onDismissed: (_) =>
-                                      _deleteNotification(notification),
-                                  background: Container(
-                                    alignment: Alignment.centerRight,
-                                    padding: const EdgeInsets.only(right: 20),
-                                    color: Colors.red,
-                                    child: const Icon(Icons.delete,
-                                        color: Colors.white),
-                                  ),
-                                  child: Card(
-                                    margin: const EdgeInsets.only(bottom: 12),
-                                    elevation: notification.read ? 0 : 2,
-                                    color: notification.read
-                                        ? Colors.white
-                                        : const Color(0xFF6366F1)
-                                            .withOpacity(0.05),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                      side: notification.read
-                                          ? BorderSide.none
-                                          : BorderSide(
-                                              color: const Color(0xFF6366F1)
-                                                  .withOpacity(0.3),
-                                            ),
-                                    ),
-                                    child: InkWell(
-                                      onTap: () => _markAsRead(notification),
-                                      borderRadius: BorderRadius.circular(16),
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(16),
-                                        child: Row(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Container(
-                                              width: 48,
-                                              height: 48,
-                                              decoration: BoxDecoration(
-                                                color: notification.color
-                                                    .withOpacity(0.1),
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
-                                              ),
-                                              child: Icon(
-                                                notification.icon,
-                                                color: notification.color,
-                                              ),
-                                            ),
-                                            const SizedBox(width: 16),
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Row(
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .spaceBetween,
-                                                    children: [
-                                                      Expanded(
-                                                        child: Text(
-                                                          notification.title,
-                                                          style:
-                                                              const TextStyle(
-                                                            fontWeight:
-                                                                FontWeight.bold,
-                                                            fontSize: 16,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                      if (!notification.read)
-                                                        Container(
-                                                          width: 8,
-                                                          height: 8,
-                                                          decoration:
-                                                              const BoxDecoration(
-                                                            color: Color(
-                                                                0xFF6366F1),
-                                                            shape:
-                                                                BoxShape.circle,
-                                                          ),
-                                                        ),
-                                                    ],
-                                                  ),
-                                                  const SizedBox(height: 4),
-                                                  Text(
-                                                    notification.message,
-                                                    style: TextStyle(
-                                                      color: Colors.grey[600],
-                                                      fontSize: 14,
-                                                    ),
-                                                  ),
-                                                  const SizedBox(height: 8),
-                                                  Row(
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .spaceBetween,
-                                                    children: [
-                                                      Text(
-                                                        _formatRelative(
-                                                            notification
-                                                                .sentAt),
-                                                        style: TextStyle(
-                                                          color:
-                                                              Colors.grey[400],
-                                                          fontSize: 12,
-                                                        ),
-                                                      ),
-                                                      InkWell(
-                                                        onTap: () =>
-                                                            _deleteNotification(
-                                                                notification),
-                                                        child: Icon(
-                                                          Icons.close,
-                                                          size: 16,
-                                                          color:
-                                                              Colors.grey[400],
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
+                ? _buildErrorState()
+                : _notifications.isEmpty
+                ? _buildEmptyState()
+                : RefreshIndicator(
+                    onRefresh: _loadNotifications,
+                    child: ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: _notifications.length,
+                      itemBuilder: (context, index) {
+                        final notification = _notifications[index];
+                        return Dismissible(
+                          key: Key(notification.id),
+                          direction: DismissDirection.endToStart,
+                          onDismissed: (_) => _deleteNotification(notification),
+                          background: Container(
+                            alignment: Alignment.centerRight,
+                            padding: const EdgeInsets.only(right: 20),
+                            color: Colors.red,
+                            child: const Icon(
+                              Icons.delete,
+                              color: Colors.white,
                             ),
                           ),
+                          child: Card(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            elevation: notification.read ? 0 : 2,
+                            color: notification.read
+                                ? Colors.white
+                                : const Color(0xFF6366F1).withOpacity(0.05),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              side: notification.read
+                                  ? BorderSide.none
+                                  : BorderSide(
+                                      color: const Color(
+                                        0xFF6366F1,
+                                      ).withOpacity(0.3),
+                                    ),
+                            ),
+                            child: InkWell(
+                              onTap: () => _markAsRead(notification),
+                              borderRadius: BorderRadius.circular(16),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Container(
+                                      width: 48,
+                                      height: 48,
+                                      decoration: BoxDecoration(
+                                        color: notification.color.withOpacity(
+                                          0.1,
+                                        ),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Icon(
+                                        notification.icon,
+                                        color: notification.color,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Expanded(
+                                                child: Text(
+                                                  notification.title,
+                                                  style: const TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 16,
+                                                  ),
+                                                ),
+                                              ),
+                                              if (!notification.read)
+                                                Container(
+                                                  width: 8,
+                                                  height: 8,
+                                                  decoration:
+                                                      const BoxDecoration(
+                                                        color: Color(
+                                                          0xFF6366F1,
+                                                        ),
+                                                        shape: BoxShape.circle,
+                                                      ),
+                                                ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            notification.message,
+                                            style: TextStyle(
+                                              color: Colors.grey[600],
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Text(
+                                                _formatRelative(
+                                                  notification.sentAt,
+                                                ),
+                                                style: TextStyle(
+                                                  color: Colors.grey[400],
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                              InkWell(
+                                                onTap: () =>
+                                                    _deleteNotification(
+                                                      notification,
+                                                    ),
+                                                child: Icon(
+                                                  Icons.close,
+                                                  size: 16,
+                                                  color: Colors.grey[400],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
           ),
         ],
       ),
@@ -622,18 +627,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           const SizedBox(height: 16),
           const Text(
             'Aucune notification',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
-          Text(
-            'Vous etes a jour !',
-            style: TextStyle(
-              color: Colors.grey[600],
-            ),
-          ),
+          Text('Vous etes a jour !', style: TextStyle(color: Colors.grey[600])),
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: _loadNotifications,
@@ -656,8 +653,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       body: Column(
         children: [
           Container(
-            padding:
-                const EdgeInsets.only(top: 48, left: 16, right: 16, bottom: 24),
+            padding: const EdgeInsets.only(
+              top: 48,
+              left: 16,
+              right: 16,
+              bottom: 24,
+            ),
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
@@ -689,10 +690,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     ),
                     Text(
                       'Notifications',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                      ),
+                      style: TextStyle(color: Colors.white70, fontSize: 14),
                     ),
                   ],
                 ),
@@ -801,10 +799,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 ),
                 Text(
                   subtitle,
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: Colors.grey[600], fontSize: 14),
                 ),
               ],
             ),
@@ -812,7 +807,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           Switch(
             value: _settings[key] ?? false,
             onChanged: (value) => setState(() => _settings[key] = value),
-            activeColor: const Color(0xFF6366F1),
+            activeThumbColor: const Color(0xFF6366F1),
           ),
         ],
       ),
@@ -827,15 +822,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         children: [
           Text(
             title,
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 16,
-            ),
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
           ),
           Switch(
             value: initialValue,
             onChanged: (value) {},
-            activeColor: const Color(0xFF6366F1),
+            activeThumbColor: const Color(0xFF6366F1),
           ),
         ],
       ),
