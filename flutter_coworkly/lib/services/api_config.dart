@@ -22,7 +22,12 @@ class ApiConfig {
   static const bool _productionUseHttps = true;
 
   // Development server configuration
-  static const String _developmentHost = '192.168.81.120';
+  // Using 'localhost' works for:
+  // - Android Emulator (auto-converts to 10.0.2.2)
+  // - iOS Simulator (uses localhost directly)
+  // - Physical Android devices (use: adb reverse tcp:4000 tcp:4000)
+  // - Physical iOS devices (ensure device and Mac are on same network, then use computer's local IP)
+  static const String _developmentHost = 'localhost';
   static const int _developmentPort = 4000;
 
   static String get baseUrl {
