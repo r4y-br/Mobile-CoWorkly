@@ -11,6 +11,7 @@ import 'subscriptions_screen.dart';
 import 'notifications_screen.dart';
 import 'profile_screen.dart';
 import 'admin_dashboard_new.dart';
+import 'admin/admin_subscriptions_tab.dart';
 import '../widgets/bottom_nav.dart';
 
 class MainNavigationScreen extends StatelessWidget {
@@ -59,6 +60,8 @@ class MainNavigationScreen extends StatelessWidget {
         return const ProfileScreen();
       case 'admin':
         return const AdminDashboardNew();
+      case 'adminSubscriptions':
+        return const AdminSubscriptionsTab();
       default:
         return const HomeScreen();
     }

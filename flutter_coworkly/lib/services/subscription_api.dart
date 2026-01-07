@@ -139,6 +139,31 @@ class SubscriptionApi {
     }
   }
 
+  // Create subscription for user (admin)
+  static Future<Map<String, dynamic>> createSubscriptionForUser(
+    String token,
+    int userId,
+    String plan, {
+    bool autoApprove = false,
+  }) async {
+    final response = await _client.post(
+      Uri.parse('${ApiConfig.baseUrl}/subscriptions/create'),
+      headers: ApiConfig.headers(token: token),
+      body: json.encode({
+        'userId': userId,
+        'plan': plan,
+        'autoApprove': autoApprove,
+      }),
+    );
+
+    if (response.statusCode == 201 || response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      final error = _parseError(response);
+      throw Exception(error);
+    }
+  }
+
   static String _parseError(http.Response response) {
     try {
       final data = json.decode(response.body);

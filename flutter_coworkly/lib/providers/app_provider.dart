@@ -104,6 +104,8 @@ class AppProvider extends ChangeNotifier {
       _currentScreen = 'dashboard';
     } else if (tabName == 'subscriptions') {
       _currentScreen = 'subscriptions';
+    } else if (tabName == 'adminSubscriptions') {
+      _currentScreen = 'adminSubscriptions';
     } else if (tabName == 'notifications') {
       _currentScreen = 'notifications';
     } else if (tabName == 'profile') {

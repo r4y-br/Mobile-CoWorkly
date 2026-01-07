@@ -1,5 +1,5 @@
 import express from 'express';
-import { getMySubscription, subscribe, approveSubscription, getAllSubscriptions, suspendSubscription, cancelSubscription, deleteSubscription } from '../controllers/subscriptionController.js';
+import { getMySubscription, subscribe, approveSubscription, getAllSubscriptions, suspendSubscription, cancelSubscription, deleteSubscription, createSubscriptionForUser } from '../controllers/subscriptionController.js';
 import { authenticate, authorize } from '../middlewares/auth.js';
 
 const router = express.Router();
@@ -15,6 +15,7 @@ router.patch('/:subscriptionId/cancel', authenticate, cancelSubscription);
 
 // Admin routes
 router.get('/all', authenticate, authorize('ADMIN'), getAllSubscriptions);
+router.post('/create', authenticate, authorize('ADMIN'), createSubscriptionForUser);
 router.patch('/:subscriptionId/approve', authenticate, authorize('ADMIN'), approveSubscription);
 router.patch('/:subscriptionId/suspend', authenticate, authorize('ADMIN'), suspendSubscription);
 router.delete('/:subscriptionId', authenticate, authorize('ADMIN'), deleteSubscription);

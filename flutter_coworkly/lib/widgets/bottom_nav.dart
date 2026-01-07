@@ -107,12 +107,12 @@ class BottomNav extends StatelessWidget {
       ),
       _buildNavItem(
         context,
-        id: 'bookings',
-        icon: Icons.calendar_today_outlined,
-        activeIcon: Icons.calendar_today,
-        label: 'Bookings',
-        isActive: activeTab == 'bookings',
-        onTap: () => appProvider.setActiveTab('bookings'),
+        id: 'adminSubscriptions',
+        icon: Icons.card_membership_outlined,
+        activeIcon: Icons.card_membership,
+        label: 'Subscriptions',
+        isActive: activeTab == 'adminSubscriptions',
+        onTap: () => appProvider.setActiveTab('adminSubscriptions'),
       ),
       _buildNavItem(
         context,

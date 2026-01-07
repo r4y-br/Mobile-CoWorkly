@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_provider.dart';
 import '../../services/subscription_api.dart';
+import '../../services/users_api.dart';
 import '../../widgets/index.dart';
 
 class AdminSubscriptionsTab extends StatefulWidget {
@@ -13,14 +14,43 @@ class AdminSubscriptionsTab extends StatefulWidget {
 
 class _AdminSubscriptionsTabState extends State<AdminSubscriptionsTab> {
   List<Map<String, dynamic>> _subscriptions = [];
+  List<Map<String, dynamic>> _users = [];
   bool _isLoading = true;
   String? _error;
   String _filterStatus = 'ALL';
+  final UsersApi _usersApi = UsersApi();
 
   @override
   void initState() {
     super.initState();
-    _loadSubscriptions();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final token = Provider.of<AppProvider>(context, listen: false).authToken;
+    if (token == null) return;
+
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final results = await Future.wait([
+        SubscriptionApi.getAllSubscriptions(token),
+        _usersApi.fetchAllUsers(token: token),
+      ]);
+      setState(() {
+        _subscriptions = results[0] as List<Map<String, dynamic>>;
+        _users = results[1] as List<Map<String, dynamic>>;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
   }
 
   Future<void> _loadSubscriptions() async {
@@ -54,20 +84,21 @@ class _AdminSubscriptionsTabState extends State<AdminSubscriptionsTab> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const LoadingState(message: 'Loading subscriptions...');
+      return const Scaffold(body: LoadingState(message: 'Loading subscriptions...'));
     }
 
     if (_error != null) {
-      return ErrorState(
+      return Scaffold(body: ErrorState(
         message: _error!,
-        onRetry: _loadSubscriptions,
-      );
+        onRetry: _loadData,
+      ));
     }
 
-    return RefreshIndicator(
-      onRefresh: _loadSubscriptions,
-      child: ListView(
-        padding: const EdgeInsets.all(16),
+    return Scaffold(
+      body: RefreshIndicator(
+        onRefresh: _loadData,
+        child: ListView(
+          padding: const EdgeInsets.all(16),
         children: [
           // Stats summary
           _buildStatsSummary(),
@@ -88,7 +119,97 @@ class _AdminSubscriptionsTabState extends State<AdminSubscriptionsTab> {
             ..._filteredSubscriptions.map((sub) => _buildSubscriptionCard(sub)),
         ],
       ),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _showCreateSubscriptionDialog,
+        backgroundColor: const Color(0xFF6366F1),
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text('Add', style: TextStyle(color: Colors.white)),
+      ),
     );
+  }
+
+  Future<void> _showCreateSubscriptionDialog() async {
+    int? selectedUserId;
+    String selectedPlan = 'MONTHLY';
+    bool autoApprove = true;
+
+    // Filter out users who already have active/pending subscriptions
+    final usersWithSubs = _subscriptions
+        .where((s) => s['status'] == 'ACTIVE' || s['status'] == 'PENDING')
+        .map((s) => s['userId'] ?? s['user']?['id'])
+        .toSet();
+    final availableUsers = _users.where((u) => !usersWithSubs.contains(u['id'])).toList();
+
+    await showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Create Subscription'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DropdownButtonFormField<int>(
+                  decoration: const InputDecoration(labelText: 'Select User'),
+                  value: selectedUserId,
+                  items: availableUsers.map((u) => DropdownMenuItem<int>(
+                    value: u['id'] as int,
+                    child: Text('${u['name']} (${u['email']})'),
+                  )).toList(),
+                  onChanged: (val) => setDialogState(() => selectedUserId = val),
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  decoration: const InputDecoration(labelText: 'Plan'),
+                  value: selectedPlan,
+                  items: const [
+                    DropdownMenuItem(value: 'MONTHLY', child: Text('Monthly (40h)')),
+                    DropdownMenuItem(value: 'QUARTERLY', child: Text('Quarterly (120h)')),
+                    DropdownMenuItem(value: 'SEMI_ANNUAL', child: Text('Semi-Annual (250h)')),
+                  ],
+                  onChanged: (val) => setDialogState(() => selectedPlan = val ?? 'MONTHLY'),
+                ),
+                const SizedBox(height: 16),
+                CheckboxListTile(
+                  title: const Text('Auto-approve'),
+                  subtitle: const Text('Activate immediately'),
+                  value: autoApprove,
+                  onChanged: (val) => setDialogState(() => autoApprove = val ?? true),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: selectedUserId == null ? null : () async {
+                Navigator.pop(context);
+                await _createSubscription(selectedUserId!, selectedPlan, autoApprove);
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF6366F1)),
+              child: const Text('Create', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _createSubscription(int userId, String plan, bool autoApprove) async {
+    final token = Provider.of<AppProvider>(context, listen: false).authToken;
+    if (token == null) return;
+
+    try {
+      await SubscriptionApi.createSubscriptionForUser(token, userId, plan, autoApprove: autoApprove);
+      _showSuccess('Subscription created!');
+      _loadData();
+    } catch (e) {
+      _showError('Error: $e');
+    }
   }
 
   Widget _buildStatsSummary() {
