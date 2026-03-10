@@ -56,20 +56,38 @@ class _RoomVisualizationScreenState extends State<RoomVisualizationScreen> {
 
     try {
       final seats = await _seatsApi.fetchSeats(roomId: roomId);
-      final mapped = seats.map((apiSeat) {
+      final mapped = <Map<String, dynamic>>[];
+      final hasPositions = seats.any((s) =>
+          s['positionX'] != null && s['positionY'] != null);
+
+      for (int i = 0; i < seats.length; i++) {
+        final apiSeat = seats[i];
         final status = _mapStatus(apiSeat['status'] as String?);
         final rawId = apiSeat['id'];
         final id = rawId is int ? rawId.toString() : rawId?.toString();
-        final posX = (apiSeat['positionX'] as num?)?.toDouble() ?? 0.5;
-        final posY = (apiSeat['positionY'] as num?)?.toDouble() ?? 0.5;
-        return {
+
+        double posX, posY;
+        if (hasPositions) {
+          posX = (apiSeat['positionX'] as num?)?.toDouble() ?? 0.5;
+          posY = (apiSeat['positionY'] as num?)?.toDouble() ?? 0.5;
+        } else {
+          // Distribute seats in a grid layout when positions are missing
+          final cols = (seats.length <= 4) ? 2 : (seats.length <= 9) ? 3 : 4;
+          final col = i % cols;
+          final row = i ~/ cols;
+          final totalRows = ((seats.length - 1) ~/ cols) + 1;
+          posX = (col + 1) / (cols + 1);
+          posY = (row + 1) / (totalRows + 1);
+        }
+
+        mapped.add({
           'id': id,
           'number': (apiSeat['number'] as num?)?.toInt() ?? 0,
           'status': status,
           'x': posX,
           'y': posY,
-        };
-      }).toList();
+        });
+      }
 
       if (!mounted) {
         return;

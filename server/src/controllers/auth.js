@@ -69,7 +69,6 @@ export const signUp = async (req, res) => {
                 role: newUser.role,
                 createdAt: newUser.createdAt
             },
-            token: accessToken,
             accessToken,
             refreshToken
         });
@@ -111,7 +110,6 @@ export const signIn = async (req, res) => {
                 role: user.role,
                 createdAt: user.createdAt
             },
-            token: accessToken,
             accessToken,
             refreshToken
         });

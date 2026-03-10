@@ -1,5 +1,6 @@
 import { prisma } from "../../lib/prisma.js";
 import bcrypt from 'bcryptjs';
+import { isValidEmail } from '../../lib/Validators.js';
 
 // Get all users (Admin only)
 export const getAllUsers = async (req, res) => {
@@ -41,8 +42,13 @@ export const getAllUsers = async (req, res) => {
 // Get single user (Admin only)
 export const getUserById = async (req, res) => {
     try {
+        const id = parseInt(req.params.id);
+        if (isNaN(id)) {
+            return res.status(400).json({ error: 'Invalid user ID' });
+        }
+
         const user = await prisma.user.findUnique({
-            where: { id: parseInt(req.params.id) },
+            where: { id },
             select: {
                 id: true,
                 name: true,
@@ -131,16 +137,24 @@ export const createUser = async (req, res) => {
 // Update user (Admin only)
 export const updateUser = async (req, res) => {
     try {
+        const id = parseInt(req.params.id);
+        if (isNaN(id)) {
+            return res.status(400).json({ error: 'Invalid user ID' });
+        }
+
         const { name, email, phone, role, password } = req.body;
         const data = {};
 
         if (name !== undefined) data.name = name;
         if (email !== undefined) {
+            if (!isValidEmail(email)) {
+                return res.status(400).json({ error: 'Invalid email format' });
+            }
             // Check if email is already taken by another user
             const existingUser = await prisma.user.findUnique({ 
                 where: { email } 
             });
-            if (existingUser && existingUser.id !== parseInt(req.params.id)) {
+            if (existingUser && existingUser.id !== id) {
                 return res.status(400).json({ error: 'Email is already taken' });
             }
             data.email = email;
@@ -154,7 +168,7 @@ export const updateUser = async (req, res) => {
         }
 
         const user = await prisma.user.update({
-            where: { id: parseInt(req.params.id) },
+            where: { id },
             data,
             select: {
                 id: true,
@@ -178,6 +192,9 @@ export const updateUser = async (req, res) => {
 export const deleteUser = async (req, res) => {
     try {
         const userId = parseInt(req.params.id);
+        if (isNaN(userId)) {
+            return res.status(400).json({ error: 'Invalid user ID' });
+        }
 
         // Prevent admin from deleting themselves
         if (userId === req.user.id) {

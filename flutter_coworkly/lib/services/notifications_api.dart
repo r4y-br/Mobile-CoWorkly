@@ -69,7 +69,7 @@ class NotificationsApi {
   }
 
   Future<void> deleteAll({required String token}) async {
-    final uri = Uri.parse('${ApiConfig.baseUrl}/notifications/all');
+    final uri = Uri.parse('${ApiConfig.baseUrl}/notifications');
     final response = await _client.delete(
       uri,
       headers: ApiConfig.headers(token: token, json: false),

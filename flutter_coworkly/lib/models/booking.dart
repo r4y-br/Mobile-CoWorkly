@@ -1,25 +1,33 @@
 class Booking {
   final String id;
-  final String spaceId;
-  final String spaceName;
-  final DateTime date;
-  final String startTime;
-  final String duration;
-  final String type; // 'hourly', 'daily', 'weekly'
-  final double price;
-  final String paymentMethod;
-  final String status; // 'pending', 'confirmed', 'completed', 'cancelled'
+  final int seatId;
+  final String? roomName;
+  final DateTime startTime;
+  final DateTime endTime;
+  final String type; // 'HOURLY', 'DAILY'
+  final String status; // 'PENDING', 'CONFIRMED', 'CANCELLED'
 
   Booking({
     required this.id,
-    required this.spaceId,
-    required this.spaceName,
-    required this.date,
+    required this.seatId,
+    this.roomName,
     required this.startTime,
-    required this.duration,
+    required this.endTime,
     required this.type,
-    required this.price,
-    required this.paymentMethod,
     required this.status,
   });
+
+  factory Booking.fromJson(Map<String, dynamic> json) {
+    final seat = json['seat'] as Map<String, dynamic>?;
+    final room = seat?['room'] as Map<String, dynamic>?;
+    return Booking(
+      id: json['id'].toString(),
+      seatId: json['seatId'] as int,
+      roomName: room?['name'] as String?,
+      startTime: DateTime.parse(json['startTime'] as String),
+      endTime: DateTime.parse(json['endTime'] as String),
+      type: json['type'] as String? ?? 'HOURLY',
+      status: json['status'] as String? ?? 'PENDING',
+    );
+  }
 }

@@ -24,7 +24,6 @@ class _BookingScreenState extends State<BookingScreen> {
   final List<Map<String, dynamic>> bookingTypes = [
     {'id': 'hourly', 'label': 'À l\'heure', 'price': 5, 'unit': 'heure'},
     {'id': 'daily', 'label': 'À la journée', 'price': 25, 'unit': 'jour'},
-    {'id': 'weekly', 'label': 'À la semaine', 'price': 120, 'unit': 'semaine'},
   ];
 
   final List<String> timeSlots = [
@@ -260,9 +259,7 @@ class _BookingScreenState extends State<BookingScreen> {
 
     try {
       // Map booking type to API reservation type
-      final apiType = bookingType == 'daily' || bookingType == 'weekly'
-          ? 'DAILY'
-          : 'HOURLY';
+      final apiType = bookingType == 'daily' ? 'DAILY' : 'HOURLY';
 
       await _bookingApi.createReservation(
         token: token,
@@ -314,8 +311,6 @@ class _BookingScreenState extends State<BookingScreen> {
     int hoursToAdd = amount;
     if (type == 'daily') {
       hoursToAdd = amount * 8;
-    } else if (type == 'weekly') {
-      hoursToAdd = amount * 40;
     }
     final totalMinutes = startHour * 60 + startMinute + hoursToAdd * 60;
     final endHour = (totalMinutes ~/ 60) % 24;

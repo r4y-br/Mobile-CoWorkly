@@ -40,7 +40,10 @@ class ReservationsApi {
   }) async {
     final uri = Uri.parse('${ApiConfig.baseUrl}/reservations');
     // Convert seatId to int for API compatibility
-    final seatIdInt = int.tryParse(seatId) ?? seatId;
+    final seatIdInt = int.tryParse(seatId);
+    if (seatIdInt == null) {
+      throw Exception('Invalid seat ID: must be a number');
+    }
     final response = await _client.post(
       uri,
       headers: ApiConfig.headers(token: token),

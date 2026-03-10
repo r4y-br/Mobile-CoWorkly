@@ -16,16 +16,7 @@ export const getAllNotifications = async (req, res) => {
             orderBy: { createdAt: 'desc' },
         });
 
-        // Map to frontend expected format
-        const mapped = notifications.map(n => ({
-            id: n.id,
-            type: n.type,
-            content: n.message,
-            sentAt: n.createdAt,
-            readAt: n.isRead ? n.createdAt : null,
-        }));
-
-        return res.json(mapped);
+        return res.json(notifications);
     } catch (error) {
         console.error('Error fetching notifications:', error);
         return res.status(500).json({ error: 'Failed to fetch notifications' });
@@ -35,8 +26,13 @@ export const getAllNotifications = async (req, res) => {
 // Mark notification as read
 export const markAsRead = async (req, res) => {
     try {
+        const id = parseInt(req.params.id);
+        if (isNaN(id)) {
+            return res.status(400).json({ error: 'Invalid notification ID' });
+        }
+
         const notification = await prisma.notification.findUnique({
-            where: { id: parseInt(req.params.id) },
+            where: { id },
         });
 
         if (!notification || notification.userId !== req.user.id) {
@@ -44,17 +40,11 @@ export const markAsRead = async (req, res) => {
         }
 
         const updated = await prisma.notification.update({
-            where: { id: parseInt(req.params.id) },
+            where: { id },
             data: { isRead: true },
         });
 
-        return res.json({
-            id: updated.id,
-            type: updated.type,
-            content: updated.message,
-            sentAt: updated.createdAt,
-            readAt: new Date(),
-        });
+        return res.json(updated);
     } catch (error) {
         console.error('Error marking notification as read:', error);
         return res.status(500).json({ error: 'Failed to update notification' });
@@ -79,15 +69,20 @@ export const markAllAsRead = async (req, res) => {
 // Delete notification
 export const deleteNotification = async (req, res) => {
     try {
+        const id = parseInt(req.params.id);
+        if (isNaN(id)) {
+            return res.status(400).json({ error: 'Invalid notification ID' });
+        }
+
         const notification = await prisma.notification.findUnique({
-            where: { id: parseInt(req.params.id) },
+            where: { id },
         });
 
         if (!notification || notification.userId !== req.user.id) {
             return res.status(404).json({ error: 'Notification not found' });
         }
 
-        await prisma.notification.delete({ where: { id: parseInt(req.params.id) } });
+        await prisma.notification.delete({ where: { id } });
         return res.status(204).send();
     } catch (error) {
         console.error('Error deleting notification:', error);

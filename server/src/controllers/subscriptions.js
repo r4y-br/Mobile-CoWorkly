@@ -12,7 +12,11 @@ export const getAllSubscriptions = async (req, res) => {
         
         // Filter by user
         if (req.query.userId) {
-            where.userId = parseInt(req.query.userId);
+            const parsedUserId = parseInt(req.query.userId);
+            if (isNaN(parsedUserId)) {
+                return res.status(400).json({ error: 'Invalid userId query parameter' });
+            }
+            where.userId = parsedUserId;
         }
 
         const subscriptions = await prisma.subscription.findMany({
@@ -54,8 +58,13 @@ export const getMySubscriptions = async (req, res) => {
 // Get single subscription
 export const getSubscriptionById = async (req, res) => {
     try {
+        const id = parseInt(req.params.id);
+        if (isNaN(id)) {
+            return res.status(400).json({ error: 'Invalid subscription ID' });
+        }
+
         const subscription = await prisma.subscription.findUnique({
-            where: { id: parseInt(req.params.id) },
+            where: { id },
             include: {
                 user: {
                     select: {
@@ -145,8 +154,13 @@ export const createSubscription = async (req, res) => {
 // Approve subscription (Admin only)
 export const approveSubscription = async (req, res) => {
     try {
+        const id = parseInt(req.params.id);
+        if (isNaN(id)) {
+            return res.status(400).json({ error: 'Invalid subscription ID' });
+        }
+
         const subscription = await prisma.subscription.findUnique({
-            where: { id: parseInt(req.params.id) },
+            where: { id },
             include: { user: true },
         });
 
@@ -177,7 +191,7 @@ export const approveSubscription = async (req, res) => {
         }
 
         const updated = await prisma.subscription.update({
-            where: { id: parseInt(req.params.id) },
+            where: { id },
             data: {
                 status: 'ACTIVE',
                 startDate: now,
@@ -216,8 +230,13 @@ export const approveSubscription = async (req, res) => {
 // Cancel subscription
 export const cancelSubscription = async (req, res) => {
     try {
+        const id = parseInt(req.params.id);
+        if (isNaN(id)) {
+            return res.status(400).json({ error: 'Invalid subscription ID' });
+        }
+
         const subscription = await prisma.subscription.findUnique({
-            where: { id: parseInt(req.params.id) },
+            where: { id },
         });
 
         if (!subscription) {
@@ -229,8 +248,13 @@ export const cancelSubscription = async (req, res) => {
             return res.status(403).json({ error: 'Forbidden' });
         }
 
+        // Reject if already cancelled or expired
+        if (['CANCELLED', 'EXPIRED'].includes(subscription.status)) {
+            return res.status(400).json({ error: `Cannot cancel a subscription that is already ${subscription.status}` });
+        }
+
         const updated = await prisma.subscription.update({
-            where: { id: parseInt(req.params.id) },
+            where: { id },
             data: { status: 'CANCELLED' },
             include: {
                 user: {
@@ -263,16 +287,26 @@ export const cancelSubscription = async (req, res) => {
 // Suspend subscription (Admin only)
 export const suspendSubscription = async (req, res) => {
     try {
+        const id = parseInt(req.params.id);
+        if (isNaN(id)) {
+            return res.status(400).json({ error: 'Invalid subscription ID' });
+        }
+
         const subscription = await prisma.subscription.findUnique({
-            where: { id: parseInt(req.params.id) },
+            where: { id },
         });
 
         if (!subscription) {
             return res.status(404).json({ error: 'Subscription not found' });
         }
 
+        // Only ACTIVE subscriptions can be suspended
+        if (subscription.status !== 'ACTIVE') {
+            return res.status(400).json({ error: 'Only ACTIVE subscriptions can be suspended' });
+        }
+
         const updated = await prisma.subscription.update({
-            where: { id: parseInt(req.params.id) },
+            where: { id },
             data: { status: 'SUSPENDED' },
             include: {
                 user: {
@@ -305,8 +339,13 @@ export const suspendSubscription = async (req, res) => {
 // Delete subscription (Admin only)
 export const deleteSubscription = async (req, res) => {
     try {
+        const id = parseInt(req.params.id);
+        if (isNaN(id)) {
+            return res.status(400).json({ error: 'Invalid subscription ID' });
+        }
+
         await prisma.subscription.delete({
-            where: { id: parseInt(req.params.id) },
+            where: { id },
         });
         return res.status(204).send();
     } catch (error) {

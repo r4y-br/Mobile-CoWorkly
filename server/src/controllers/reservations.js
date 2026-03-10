@@ -63,11 +63,19 @@ export const getAllReservations = async (req, res) => {
         if (req.user.role !== 'ADMIN') {
             where.userId = req.user.id;
         } else if (req.query.userId) {
-            where.userId = parseInt(req.query.userId);
+            const parsedUserId = parseInt(req.query.userId);
+            if (isNaN(parsedUserId)) {
+                return res.status(400).json({ error: 'Invalid userId query parameter' });
+            }
+            where.userId = parsedUserId;
         }
 
         if (req.query.seatId) {
-            where.seatId = parseInt(req.query.seatId);
+            const parsedSeatId = parseInt(req.query.seatId);
+            if (isNaN(parsedSeatId)) {
+                return res.status(400).json({ error: 'Invalid seatId query parameter' });
+            }
+            where.seatId = parsedSeatId;
         }
 
         const reservations = await prisma.reservation.findMany({
@@ -127,6 +135,11 @@ export const createReservation = async (req, res) => {
             return res.status(400).json({ errors: ['endTime must be after startTime'] });
         }
 
+        // Block past-date reservations
+        if (parsedStartTime <= new Date()) {
+            return res.status(400).json({ errors: ['Cannot create a reservation in the past'] });
+        }
+
         // Validate reservation is within subscription period
         if (parsedStartTime < subscription.startDate || parsedEndTime > subscription.endDate) {
             const endDateFormatted = subscription.endDate.toLocaleDateString('fr-FR');
@@ -135,41 +148,62 @@ export const createReservation = async (req, res) => {
             });
         }
 
-        const seat = await prisma.seat.findUnique({ where: { id: parseInt(seatId) } });
+        const parsedSeatId = parseInt(seatId);
+        const seat = await prisma.seat.findUnique({ where: { id: parsedSeatId } });
         if (!seat) {
             return res.status(400).json({ errors: ['seatId is invalid'] });
         }
 
-        const conflict = await hasConflict(parseInt(seatId), parsedStartTime, parsedEndTime);
+        // Block booking seats under maintenance
+        if (seat.status === 'MAINTENANCE') {
+            return res.status(400).json({ error: 'This seat is currently under maintenance and cannot be reserved' });
+        }
+
+        const conflict = await hasConflict(parsedSeatId, parsedStartTime, parsedEndTime);
         if (conflict) {
             return res.status(409).json({ error: 'Seat is already reserved for this time range' });
         }
 
-        const reservation = await prisma.reservation.create({
-            data: {
-                userId: req.user.id,
-                seatId: parseInt(seatId),
-                startTime: parsedStartTime,
-                endTime: parsedEndTime,
-                type: type || 'HOURLY',
-                status: 'CONFIRMED',
-            },
-            include: {
-                seat: { include: { room: true } },
-            },
-        });
+        // Use transaction to atomically create reservation and update seat status
+        const reservation = await prisma.$transaction(async (tx) => {
+            const newReservation = await tx.reservation.create({
+                data: {
+                    userId: req.user.id,
+                    seatId: parsedSeatId,
+                    startTime: parsedStartTime,
+                    endTime: parsedEndTime,
+                    type: type || 'HOURLY',
+                    status: 'CONFIRMED',
+                },
+                include: {
+                    seat: { include: { room: true } },
+                },
+            });
 
-        // Create notification for the user
-        await prisma.notification.create({
-            data: {
-                userId: req.user.id,
-                type: 'CONFIRMATION_RESERVATION',
-                title: 'Réservation confirmée',
-                message: `Votre réservation pour ${reservation.seat.room.name} (siège ${reservation.seat.number}) a été confirmée.`,
-            },
-        });
+            // Create notification for the user
+            await tx.notification.create({
+                data: {
+                    userId: req.user.id,
+                    type: 'CONFIRMATION_RESERVATION',
+                    title: 'Réservation confirmée',
+                    message: `Votre réservation pour ${newReservation.seat.room.name} (siège ${newReservation.seat.number}) a été confirmée.`,
+                },
+            });
 
-        await updateSeatStatus(parseInt(seatId));
+            // Update seat status within the same transaction
+            const activeReservation = await tx.reservation.findFirst({
+                where: {
+                    seatId: parsedSeatId,
+                    status: { in: ['CONFIRMED', 'PENDING'] },
+                },
+            });
+            await tx.seat.update({
+                where: { id: parsedSeatId },
+                data: { status: activeReservation ? 'RESERVED' : 'AVAILABLE' },
+            });
+
+            return newReservation;
+        });
 
         return res.status(201).json(reservation);
     } catch (error) {
@@ -181,8 +215,13 @@ export const createReservation = async (req, res) => {
 // Cancel reservation
 export const cancelReservation = async (req, res) => {
     try {
+        const id = parseInt(req.params.id);
+        if (isNaN(id)) {
+            return res.status(400).json({ error: 'Invalid reservation ID' });
+        }
+
         const reservation = await prisma.reservation.findUnique({
-            where: { id: parseInt(req.params.id) },
+            where: { id },
         });
 
         if (!reservation) {
@@ -194,15 +233,34 @@ export const cancelReservation = async (req, res) => {
             return res.status(403).json({ error: 'Forbidden' });
         }
 
-        const updated = await prisma.reservation.update({
-            where: { id: parseInt(req.params.id) },
-            data: { status: 'CANCELLED' },
-            include: {
-                seat: { include: { room: true } },
-            },
-        });
+        // Prevent double-cancel
+        if (reservation.status === 'CANCELLED') {
+            return res.status(400).json({ error: 'Reservation is already cancelled' });
+        }
 
-        await updateSeatStatus(reservation.seatId);
+        // Use transaction to atomically cancel reservation and update seat status
+        const updated = await prisma.$transaction(async (tx) => {
+            const cancelled = await tx.reservation.update({
+                where: { id },
+                data: { status: 'CANCELLED' },
+                include: {
+                    seat: { include: { room: true } },
+                },
+            });
+
+            const activeReservation = await tx.reservation.findFirst({
+                where: {
+                    seatId: reservation.seatId,
+                    status: { in: ['CONFIRMED', 'PENDING'] },
+                },
+            });
+            await tx.seat.update({
+                where: { id: reservation.seatId },
+                data: { status: activeReservation ? 'RESERVED' : 'AVAILABLE' },
+            });
+
+            return cancelled;
+        });
 
         return res.json(updated);
     } catch (error) {
@@ -214,15 +272,20 @@ export const cancelReservation = async (req, res) => {
 // Delete reservation (Admin only)
 export const deleteReservation = async (req, res) => {
     try {
+        const id = parseInt(req.params.id);
+        if (isNaN(id)) {
+            return res.status(400).json({ error: 'Invalid reservation ID' });
+        }
+
         const reservation = await prisma.reservation.findUnique({
-            where: { id: parseInt(req.params.id) },
+            where: { id },
         });
 
         if (!reservation) {
             return res.status(404).json({ error: 'Reservation not found' });
         }
 
-        await prisma.reservation.delete({ where: { id: parseInt(req.params.id) } });
+        await prisma.reservation.delete({ where: { id } });
         await updateSeatStatus(reservation.seatId);
 
         return res.status(204).send();

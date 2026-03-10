@@ -23,6 +23,12 @@ class _SpaceSelectionScreenState extends State<SpaceSelectionScreen> {
     _loadSpaces();
   }
 
+  @override
+  void dispose() {
+    _roomsApi.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadSpaces() async {
     setState(() {
       _isLoading = true;

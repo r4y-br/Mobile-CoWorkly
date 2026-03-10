@@ -8,6 +8,7 @@ import reservationsRoutes from './src/routes/reservations.js';
 import notificationsRoutes from './src/routes/notifications.js';
 import subscriptionsRoutes from './src/routes/subscriptions.js';
 import usersRoutes from './src/routes/users.js';
+import { limiter } from './lib/rateLimiter.js';
 dotenv.config();
 
 const app = express();
@@ -19,7 +20,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // routes
-app.use('/auth', authRoutes);
+app.use('/auth', limiter, authRoutes);
 app.use('/rooms', roomsRoutes);
 app.use('/seats', seatsRoutes);
 app.use('/reservations', reservationsRoutes);

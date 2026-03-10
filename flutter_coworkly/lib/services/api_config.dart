@@ -25,9 +25,9 @@ class ApiConfig {
   // Using 'localhost' works for:
   // - Android Emulator (auto-converts to 10.0.2.2)
   // - iOS Simulator (uses localhost directly)
-  // - Physical Android devices (use: adb reverse tcp:4000 tcp:4000)
+  // - Physical Android devices (use your computer's local IP, e.g., '192.168.x.x')
   // - Physical iOS devices (ensure device and Mac are on same network, then use computer's local IP)
-  static const String _developmentHost = 'localhost';
+  static const String _developmentHost = '192.168.1.114';
   static const int _developmentPort = 4000;
 
   static String get baseUrl {
@@ -43,10 +43,8 @@ class ApiConfig {
 
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
-        // Use 10.0.2.2 for Android emulator, or _developmentHost for physical device
-        final host =
-            _developmentHost == 'localhost' ? '10.0.2.2' : _developmentHost;
-        return 'http://$host:$_developmentPort';
+        // adb reverse tcp:4000 tcp:4000 makes localhost work on physical devices
+        return 'http://localhost:$_developmentPort';
       case TargetPlatform.iOS:
       case TargetPlatform.macOS:
       case TargetPlatform.windows:

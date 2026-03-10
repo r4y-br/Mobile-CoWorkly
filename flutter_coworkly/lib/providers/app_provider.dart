@@ -29,8 +29,7 @@ class AppProvider extends ChangeNotifier {
 
   Future<void> login(String email, String password) async {
     final response = await _authApi.login(email: email, password: password);
-    _authToken =
-        response['token'] as String? ?? response['accessToken'] as String?;
+    _authToken = response['accessToken'] as String?;
     _refreshToken = response['refreshToken'] as String?;
     final userData = response['user'] as Map<String, dynamic>?;
     if (userData != null) {
@@ -52,8 +51,7 @@ class AppProvider extends ChangeNotifier {
       name: name,
       phone: phone,
     );
-    _authToken =
-        response['token'] as String? ?? response['accessToken'] as String?;
+    _authToken = response['accessToken'] as String?;
     _refreshToken = response['refreshToken'] as String?;
     final userData = response['user'] as Map<String, dynamic>?;
     if (userData != null) {
