@@ -27,7 +27,7 @@ class ApiConfig {
   // - iOS Simulator (uses localhost directly)
   // - Physical Android devices (use your computer's local IP, e.g., '192.168.x.x')
   // - Physical iOS devices (ensure device and Mac are on same network, then use computer's local IP)
-  static const String _developmentHost = '192.168.1.114';
+  static const String _developmentHost = 'localhost';
   static const int _developmentPort = 4000;
 
   static String get baseUrl {
